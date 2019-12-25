@@ -1,0 +1,103 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Zhangrui
+ * Date: 2019/12/23
+ * Time: 18:05
+ */
+
+namespace Swozr\Taskr\Server\Event;
+
+
+class SwooleEvent
+{
+    /**
+     * Start
+     */
+    const START = 'start';
+
+    /**
+     * Shutdown
+     */
+    const SHUTDOWN = 'shutdown';
+
+    /**
+     * WorkerStart
+     */
+    const WORKER_START = 'workerStart';
+
+    /**
+     * WorkerStop
+     */
+    const WORKER_STOP = 'workerStop';
+
+    /**
+     * WorkerError
+     */
+    const WORKER_ERROR = 'workerError';
+
+    /**
+     * ManagerStart
+     */
+    const MANAGER_START = 'managerStart';
+
+    /**
+     * ManagerStop
+     */
+    const MANAGER_STOP = 'managerStop';
+
+    /**
+     * Task
+     */
+    const TASK = 'task';
+
+    /**
+     * Finish
+     */
+    const FINISH = 'finish';
+
+    /**
+     * PipeMessage
+     */
+    const PIPE_MESSAGE = 'pipeMessage';
+
+    /**
+     * Handshake
+     */
+    const HANDSHAKE = 'handshake';
+
+    /**
+     * Message
+     */
+    const MESSAGE = 'message';
+
+    /**
+     * Open
+     */
+    const OPEN = 'open';
+
+    /**
+     * Request
+     */
+    const REQUEST = 'request';
+
+    /**
+     * Packet
+     */
+    const PACKET = 'packet';
+
+    /**
+     * Receive
+     */
+    const RECEIVE = 'receive';
+
+    /**
+     * Connect
+     */
+    const CONNECT = 'connect';
+
+    /**
+     * Close
+     */
+    const CLOSE = 'close';
+}

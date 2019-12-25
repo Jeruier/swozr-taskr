@@ -1,0 +1,29 @@
+{
+    "name": "jeruier/task-serv",
+    "description": "task processing service component",
+    "type": "library",
+    "require": {
+        "php": ">=7.0"
+    },
+    "require-dev": {
+        "swoft/swoole-ide-helper": "dev-master"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "zhangrui",
+            "email": "1170870297@qq.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-4": {
+            "Swozr\\Taskr\\Server\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "SwozrTest\\Taskr\\Server\\": "testing/"
+        }
+    }
+}
