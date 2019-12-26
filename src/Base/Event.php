@@ -56,6 +56,9 @@ class Event implements EventInterface
 
     public function setParams(array $params)
     {
+        if (!$params){
+            return false;
+        }
         return $this->params = $params;
     }
 

@@ -157,19 +157,24 @@ class EventManager
 
     /**
      * 触发
-     * @param string $eventName
+     * @param string|EventInterface $event
      * @param null $target
      * @param array $args
      * @return bool
      */
-    public function trigger(string $eventName, $target = null, array $args = [])
+    public function trigger($event, $target = null, array $args = [])
     {
-        $event = $this->event;
-        $event->setName($eventName);
+        if (is_string($event)) {
+            $eventName = $event;
+            $event = $this->event;
+            $event->setName($eventName);
+        } elseif (!($event instanceof EventInterface)) {
+            throw new \InvalidArgumentException('Invalid event params for trigger event handler');
+        }
         $event->setTarget($target);
         $event->setParams($args);
 
-        foreach ([$eventName, '*'] as $name) {
+        foreach ([$event->getName(), '*'] as $name) {
             if (isset($this->listeners[$name])) {
                 $this->triggerListeners($name, $event);
             }

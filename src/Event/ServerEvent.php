@@ -27,6 +27,21 @@ class ServerEvent
     const AFTER_ADDED_EVENT = 'server.added.event.after';
 
     /**
+     * Before add process(es)
+     */
+    const BEFORE_ADDED_PROCESS = 'server.added.process.before';
+
+    /**
+     * Add process(es)
+     */
+    const ADDED_PROCESS = 'server.added.process';
+
+    /**
+     * After each process is successfully added
+     */
+    const AFTER_ADDED_PROCESS = 'server.added.process.after';
+
+    /**
      * before start server event
      */
     const BEFORE_START = 'server.start.before';
@@ -37,9 +52,19 @@ class ServerEvent
     const TASK_PROCESS_START = 'server.process.task.start';
 
     /**
+     * On task process start event
+     */
+    const TASK_PROCESS_STOP = 'server.process.task.stop';
+
+    /**
      * On work process start event
      */
     const WORK_PROCESS_START = 'server.process.work.start';
+
+    /**
+     * On work process start event
+     */
+    const WORK_PROCESS_STOP = 'server.process.work.stop';
 
     /**
      * After after event

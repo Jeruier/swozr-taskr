@@ -8,10 +8,19 @@
 
 namespace Swozr\Taskr\Server;
 
+use Swoole\Process;
 use Swoole\Server as SwooleServer;
+use Swozr\Taskr\Server\Base\Event;
+use Swozr\Taskr\Server\Event\ServerEvent;
+use Swozr\Taskr\Server\Event\SwooleEvent;
+use Swozr\Taskr\Server\Exception\ServerException;
 
 class Server
 {
+    const ROLE_WORK_PROCESS_WORKER = 'worker';  //Worker进程
+
+    const ROLE_WORK_PROCESS_TASK = 'task';  //Task进程
+
     /**
      * Default host address
      *
@@ -24,7 +33,7 @@ class Server
      *
      * @var int
      */
-    protected $port = 80;
+    protected $port = 9501;
 
     /**
      * Default mode type
@@ -50,9 +59,53 @@ class Server
 
     /**
      * Swoole Server
-     *
+     * @var SwooleServer
      */
     protected $swooleServer;
+
+    /**
+     * Server event for swoole event
+     *
+     * @var array
+     *
+     * @example
+     * [
+     *     'serverName' => new SwooleEventListener(),
+     *     'serverName' => new SwooleEventListener(),
+     *     'serverName' => new SwooleEventListener(),
+     * ]
+     */
+    protected $on = [];
+
+    /**
+     * 用于进程名称
+     * @var string
+     */
+    protected $pidName = 'swozr';
+
+    /**
+     * pid file 内容 matsterPid,managerPid
+     * @var string
+     */
+    protected $pidFile = '/tmp/swozr.pid';
+
+    /**
+     * master process pid
+     * @var null
+     */
+    protected $masterPid = null;
+
+    /**
+     * manager process pid
+     * @var null
+     */
+    protected $managerPid = null;
+
+    /**
+     * log fole
+     * @var string
+     */
+    protected $logFile = '/tmp/swoole.log';
 
     /**
      * Server constructor
@@ -62,6 +115,433 @@ class Server
         $this->setting = $this->defaultSetting();
     }
 
+    /**
+     * 设置运行时的各项参数
+     * @param $setting
+     */
+    public function setSetting($setting)
+    {
+        $this->setting = array_merge($this->setting, $setting);
+    }
+
+    /**
+     * set host
+     * @param string $host
+     */
+    public function setHost(string $host)
+    {
+        $this->host = $host;
+    }
+
+    /**
+     * swt port
+     * @param int $port
+     */
+    public function setPort(int $port)
+    {
+        $this->port = $port;
+    }
+
+    /**
+     * set mode
+     * @param int $mode
+     */
+    public function setMode(int $mode)
+    {
+        if (!in_array($mode, [SWOOLE_PROCESS, SWOOLE_BASE])) {
+            throw new \InvalidArgumentException('invalid server mode value: ' . $mode);
+        }
+        $this->mode = $mode;
+    }
+
+    /**
+     * set type
+     * @param int $type
+     */
+    public function setType(int $type)
+    {
+        if (!in_array($type, [
+            SWOOLE_SOCK_TCP,
+            SWOOLE_SSL,
+            SWOOLE_SOCK_TCP6,
+            SWOOLE_SOCK_TCP,
+            SWOOLE_SOCK_TCP6,
+            SWOOLE_SOCK_UDP,
+            SWOOLE_SOCK_UDP6,
+            SWOOLE_SOCK_UNIX_DGRAM,
+            SWOOLE_SOCK_UNIX_STREAM
+        ])) {
+            throw new \InvalidArgumentException('invalid server type value: ' . $type);
+        }
+        $this->type = $type;
+    }
+
+    /**
+     * set pid name
+     * @param $pidName
+     */
+    public function setPidName(string $pidName)
+    {
+        $pidName && $this->pidName = $pidName;
+    }
+
+    /**
+     * set pid file
+     * @param string $pidFile
+     */
+    public function setPidFile(string $pidFile)
+    {
+        $pidFile && $this->pidFile = $pidFile;
+    }
+
+    /**
+     * set log file
+     * @param string $logFile
+     */
+    public function setLogfile(string $logFile)
+    {
+        $logFile && $this->logFile = $logFile;
+    }
+
+    /**
+     * master pid
+     * @return null
+     */
+    public function getMasterPid()
+    {
+        return $this->masterPid;
+    }
+
+    /**
+     * manager pid
+     * @return null
+     */
+    public function getManagerPid()
+    {
+        return $this->managerPid;
+    }
+
+    /**
+     * 是否守护进程运行
+     * @return bool
+     */
+    protected function isDaemon(): bool
+    {
+        return !$this->setting['daemonize'] ? false : true;
+    }
+
+    /**
+     * 是否协程任务
+     * @return bool
+     */
+    public function isCoroutineTask(): bool
+    {
+        return $this->setting['task_enable_coroutine'] ?? false;
+    }
+
+    /**
+     * check if the server is running
+     * @return bool
+     */
+    public function isRunning(): bool
+    {
+        if (file_exists($this->pidFile)) {
+            return false;
+        }
+
+        $pids = file_get_contents($this->pidFile);
+        [$masterPid, $managerPid] = explode(',', $pids);
+        return $masterPid > 1 && Process::kill($masterPid, 0);//$signo=0，可以检测进程是否存在，不会发送信号
+    }
+
+    /**
+     * 获取工作进程角色
+     * @param int $workerId
+     * @return string
+     */
+    protected function getWorkProcessRole(int $workerId): string
+    {
+        return $workerId >= $this->setting['worker_num'] ? self::ROLE_WORK_PROCESS_TASK : self::ROLE_WORK_PROCESS_WORKER;
+    }
+
+    /**
+     * 添加任务事件
+     */
+    protected function addTaskEvent()
+    {
+        $listenerMethod = $this->isCoroutineTask() ? 'onSyncTask' : 'onTask';
+        $this->swooleServer->on(SwooleEvent::TASK, [$this, $listenerMethod]);
+        $this->swooleServer->on(SwooleEvent::FINISH, [$this, 'onFinish']);
+    }
+
+    /**
+     * 开启服务
+     * @throws ServerException
+     */
+    public function start()
+    {
+        $this->swooleServer = new SwooleServer($this->host, $this->port, $this->mode, $this->type);
+
+        //Before setiing
+        Swozr::trigger(ServerEvent::BEFORE_SETTING, $this);
+
+        //Set setting
+        $this->swooleServer->set($this->setting);
+
+        //Before add event
+        Swozr::trigger(ServerEvent::BEFORE_ADDED_EVENT, $this);
+        //注册Server的事件回调函数
+        $defaultEvents = $this->defaultEvents();
+
+        //添加默认事件
+        foreach ($defaultEvents as $name => $listener) {
+            $this->swooleServer->on($name, $listener);
+        }
+
+        //添加自定义事件
+        foreach ($this->on as $name => $listener) {
+            if (array_key_exists($name, $defaultEvents) || !isset(SwooleEvent::CUSTOM_EVENTS_MAPPING[$name])) {
+                //默认事件或不正规时间不能自定义
+                throw new ServerException(sprintf("Cannot customize event %s", $name));
+            }
+
+            $listenerInterface = SwooleEvent::CUSTOM_EVENTS_MAPPING[$name];
+            if (!($listener instanceof $listenerInterface)) {
+                throw new ServerException(sprintf("Swoole %s event listener is not %s", $name, $listenerInterface));
+            }
+            $this->swooleServer->on($name, [$listener, sprintf("on%s", ucfirst($name))]);
+        }
+
+        $this->addTaskEvent(); //add task event
+
+        //After add event
+        Swozr::trigger(ServerEvent::AFTER_ADDED_EVENT, $this);
+
+        // Before bind process
+        Swozr::trigger(ServerEvent::BEFORE_ADDED_PROCESS, $this);
+
+        // Add Process
+        Swozr::trigger(ServerEvent::ADDED_PROCESS, $this);
+
+        // After bind process
+        Swozr::trigger(ServerEvent::AFTER_ADDED_PROCESS, $this);
+
+        // Trigger event
+        Swozr::trigger(ServerEvent::BEFORE_START, $this);
+
+        $this->swooleServer->start();
+    }
+
+    public function restart()
+    {
+        if (!$this->isRunning()) {
+            //@todo 输出 server 未运行
+        }
+        //@todo 重启server
+    }
+
+    /**
+     * reload
+     * @param bool $onlyTaskWorker
+     * @return bool
+     */
+    public function reReload(bool $onlyTaskWorker = false): bool
+    {
+        if (!$this->isRunning()) {
+            //未运行
+            return false;
+        }
+        $signal = $onlyTaskWorker ? 12 : 10; //用户信号
+        return Process::kill($this->masterPid, $signal);
+    }
+
+    /**
+     * stop server
+     * @return bool
+     */
+    public function stop(): bool
+    {
+        if (!$this->isRunning()) {
+            return false;
+        }
+
+        if (!Process::kill($this->masterPid, 15)) {
+            echo "Send stop signal to the {$this->pidName}(PID:{$this->masterPid}) failed!" . PHP_EOL;
+            return false;
+        }
+
+        echo "The {$this->pidName} process stopped." . PHP_EOL;
+        file_exists($this->pidFile) && @unlink($this->pidFile);
+        return true;
+    }
+
+    /**
+     * onStart
+     * @param SwooleServer $serv
+     */
+    public function onStart(SwooleServer $serv)
+    {
+        [$this->masterPid, $this->managerPid] = [$serv->master_pid, $serv->manager_pid];
+
+        //create dir and save pid to file
+        Swozr::makeDir(dirname($this->pidFile));
+        file_put_contents($this->pidFile, sprintf("%s,%s", $this->masterPid, $this->managerPid));
+
+        //set process title
+        Swozr::setProcessName(sprintf("%s master process", $this->pidName));
+
+        //start event
+        Swozr::trigger(SwooleEvent::START, $this);
+    }
+
+    /**
+     * 强制kill进程不会回调onShutdown，如kill -9
+     * 需要使用kill -15来发送SIGTREM信号到主进程才能按照正常的流程终止
+     * 在命令行中使用Ctrl+C中断程序会立即停止，底层不会回调onShutdown
+     * @param SwooleServer $serv
+     */
+    public function onShutdown(SwooleServer $serv)
+    {
+        //delete pid file
+        file_exists($this->pidFile) && @unlink($this->pidFile);
+
+        //shutdown event
+        Swozr::trigger(SwooleEvent::SHUTDOWN, $this);
+    }
+
+    /**
+     * onManagerStart
+     * @param SwooleServer $serv
+     */
+    public function onManagerStart(SwooleServer $serv)
+    {
+        // Set process title
+        Swozr::setProcessName(sprintf("%s manager process", $this->pidName));
+
+        //manager start event
+        Swozr::trigger(SwooleEvent::MANAGER_START, $this);
+    }
+
+    /**
+     * onManagerStop
+     * @param SwooleServer $serv
+     */
+    public function onManagerStop(SwooleServer $serv)
+    {
+        //manager stop event
+        Swozr::trigger(SwooleEvent::MANAGER_STOP, $this);
+    }
+
+    /**
+     * onWorkerStart
+     * @param SwooleServer $serv
+     * @param int $workerId
+     */
+    public function onWorkerStart(SwooleServer $serv, int $workerId)
+    {
+        //worker start event
+        Swozr::trigger(SwooleEvent::WORKER_START, $serv, $workerId);
+
+        $processRole = $this->getWorkProcessRole($workerId);
+        Swozr::setProcessName(sprintf("%s %s process", $this->pidName, $processRole));
+
+        //worker|task start event
+        $eventName = $processRole == self::ROLE_WORK_PROCESS_WORKER ? ServerEvent::WORK_PROCESS_START : ServerEvent::TASK_PROCESS_START;
+        Swozr::trigger($eventName, $this, $workerId);
+    }
+
+    /**
+     * onWorkerStop
+     * @param SwooleServer $serv
+     * @param int $workerId
+     */
+    public function onWorkerStop(SwooleServer $serv, int $workerId)
+    {
+        //worker end event
+        Swozr::trigger(SwooleEvent::WORKER_STOP, $serv, $workerId);
+
+        //worker|task stop event
+        $eventName = $this->getWorkProcessRole($workerId) == self::ROLE_WORK_PROCESS_WORKER ? ServerEvent::WORK_PROCESS_STOP : ServerEvent::TASK_PROCESS_STOP;
+        Swozr::trigger($eventName, $this, $workerId);
+    }
+
+    /**
+     * onWorkerError
+     * @param SwooleServer $serv
+     * @param int $workerId
+     * @param int $workerPid
+     * @param int $exitCode
+     * @param int $signal
+     */
+    public function onWorkerError(SwooleServer $serv, int $workerId, int $workerPid, int $exitCode, int $signal)
+    {
+        //work error event
+        $event = new Event(SwooleEvent::WORKER_ERROR, [
+            'signal' => $signal,
+            'exitCode' => $exitCode,
+            'workerPid' => $workerPid,
+            'processRole' => $this->getWorkProcessRole($workerId)
+        ]);
+        Swozr::trigger($event, $this);
+    }
+
+    /**
+     * onReceive
+     * @param SwooleServer $serv
+     * @param int $fd
+     * @param int $reactorId
+     * @param string $data
+     */
+    public function onReceive(SwooleServer $serv, int $fd, int $reactorId, string $data)
+    {
+        //@todo onReceive
+    }
+
+    /**
+     * 协程任务onSyncTask
+     * @param $serv
+     * @param SwooleServer\Task $task
+     */
+    public function onSyncTask($serv, \Swoole\Server\Task $task)
+    {
+
+    }
+
+    /**
+     * onTask
+     * @param SwooleServer $serv
+     * @param int $taskId
+     * @param int $srcWorkerId
+     * @param mixed $data
+     */
+    public function onTask(SwooleServer $serv, int $taskId, int $srcWorkerId, $data)
+    {
+        //@todo ontask
+        echo __METHOD__ . PHP_EOL;
+    }
+
+    /**
+     * onFinish
+     * @param SwooleServer $serv
+     * @param int $taskId
+     * @param string $data
+     */
+    public function onFinish(SwooleServer $serv, int $taskId, string $data)
+    {
+        //@todo onFinish
+    }
+
+    /**
+     * Worker进程或者Task进程发送消息触发 $serv->sendMessage()
+     * onPipeMessage
+     * @param SwooleServer $serv
+     * @param int $srcWorkerId
+     * @param $message
+     */
+    public function onPipeMessage(SwooleServer $serv, int $srcWorkerId, $message)
+    {
+        //@todo 可以删
+    }
 
     /**
      * 设置Server运行时的各项参数
@@ -72,14 +552,26 @@ class Server
         return [
             'daemonize' => 0,
             'worker_num' => swoole_cpu_num(),
-            'task_worker_num' => 1
+            'task_worker_num' => 1,
+            'log_file' => $this->logFile
         ];
     }
 
-    public function start()
+    /**
+     * 默认时间
+     * @return array
+     */
+    public function defaultEvents(): array
     {
-        $this->swooleServer = new SwooleServer($this->host, $this->port, $this->mode, $this->type);
-
-
+        return [
+            SwooleEvent::START => [$this, 'onStart'],
+            SwooleEvent::SHUTDOWN => [$this, 'onShutdown'],
+            SwooleEvent::MANAGER_START => [$this, 'onManagerStart'],
+            SwooleEvent::MANAGER_STOP => [$this, 'onManagerStop'],
+            SwooleEvent::WORKER_START => [$this, 'onWorkerStart'],
+            SwooleEvent::WORKER_STOP => [$this, 'onWorkerStop'],
+            SwooleEvent::WORKER_ERROR => [$this, 'onWorkerError'],
+            SwooleEvent::RECEIVE => [$this, 'onReceive'],
+        ];
     }
 }

@@ -9,6 +9,11 @@
 namespace Swozr\Taskr\Server\Event;
 
 
+use Swozr\Taskr\Server\contract\Close;
+use Swozr\Taskr\Server\contract\Connect;
+use Swozr\Taskr\Server\contract\PipeMessage;
+use Swozr\Taskr\Server\contract\RequestInterface;
+
 class SwooleEvent
 {
     /**
@@ -100,4 +105,14 @@ class SwooleEvent
      * Close
      */
     const CLOSE = 'close';
+
+    /**
+     * 可以自定义的事件
+     */
+    const CUSTOM_EVENTS_MAPPING = [
+        self::REQUEST => RequestInterface::class,
+        self::CONNECT => Connect::class,
+        self::CLOSE => Close::class,
+        self::PIPE_MESSAGE => PipeMessage::class
+    ];
 }
