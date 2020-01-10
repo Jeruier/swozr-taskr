@@ -9,10 +9,10 @@
 namespace Swozr\Taskr\Server\Event;
 
 
-use Swozr\Taskr\Server\contract\Close;
-use Swozr\Taskr\Server\contract\Connect;
-use Swozr\Taskr\Server\contract\PipeMessage;
-use Swozr\Taskr\Server\contract\RequestInterface;
+use Swozr\Taskr\Server\Contract\Close;
+use Swozr\Taskr\Server\Contract\Connect;
+use Swozr\Taskr\Server\Contract\PipeMessage;
+use Swozr\Taskr\Server\Contract\RequestInterface;
 
 class SwooleEvent
 {

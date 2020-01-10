@@ -6,7 +6,7 @@
  * Time: 15:07
  */
 
-namespace Swozr\Taskr\Server\contract;
+namespace Swozr\Taskr\Server\Contract;
 
 
 interface RequestInterface

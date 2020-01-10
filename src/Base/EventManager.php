@@ -10,8 +10,8 @@ namespace Swozr\Taskr\Server\Base;
 
 
 use function PHPSTORM_META\type;
-use Swozr\Taskr\Server\contract\EventHandlerInterface;
-use Swozr\Taskr\Server\contract\EventInterface;
+use Swozr\Taskr\Server\Contract\EventHandlerInterface;
+use Swozr\Taskr\Server\Contract\EventInterface;
 use Swozr\Taskr\Server\Exception\RegisterEventException;
 
 class EventManager
@@ -143,6 +143,7 @@ class EventManager
         } else {
             $this->listeners[$eventName][] = [$class, $method];//使用指定函数静态方法[className 类名, calledMethodName 被调用方法]
         }
+
         return true;
     }
 
@@ -179,6 +180,7 @@ class EventManager
                 $this->triggerListeners($name, $event);
             }
         }
+
         return true;
     }
 

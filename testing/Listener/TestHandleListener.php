@@ -9,8 +9,8 @@
 namespace SwozrTest\Taskr\Server\Listener;
 
 
-use Swozr\Taskr\Server\contract\EventHandlerInterface;
-use Swozr\Taskr\Server\contract\EventInterface;
+use Swozr\Taskr\Server\Contract\EventHandlerInterface;
+use Swozr\Taskr\Server\Contract\EventInterface;
 
 class TestHandleListener implements EventHandlerInterface
 {

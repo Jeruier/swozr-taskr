@@ -10,7 +10,7 @@ namespace SwozrTest\Taskr\Server;
 
 
 use Swozr\Taskr\Server\Base\EventManager;
-use Swozr\Taskr\Server\contract\EventHandlerInterface;
+use Swozr\Taskr\Server\Contract\EventHandlerInterface;
 use Swozr\Taskr\Server\Event\ServerEvent;
 use Swozr\Taskr\Server\Swozr;
 

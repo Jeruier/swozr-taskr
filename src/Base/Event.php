@@ -9,7 +9,7 @@
 namespace Swozr\Taskr\Server\Base;
 
 
-use Swozr\Taskr\Server\contract\EventInterface;
+use Swozr\Taskr\Server\Contract\EventInterface;
 
 class Event implements EventInterface
 {

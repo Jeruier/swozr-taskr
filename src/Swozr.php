@@ -17,7 +17,7 @@ class Swozr
 
     /**
      * 触发事件
-     * @param string|\Swozr\Taskr\Server\contract\EventInterface $event
+     * @param string|\Swozr\Taskr\Server\Contract\EventInterface $event
      * @param null $target
      * @param mixed ...$params
      * @return bool
@@ -52,5 +52,21 @@ class Swozr
         if (!file_exists($dir) && !mkdir($dir, $mode, true) && !is_dir($dir)) {
             throw new \RuntimeException(sprintf('Directory "%s" was not created', $dir));
         }
+    }
+
+    /**
+     * @return Server
+     */
+    public static function server()
+    {
+        return Server::getServer();
+    }
+
+    /**
+     * @return \Swoole\Server
+     */
+    public static function swooleServer()
+    {
+        return self::server()->getSwooleServer();
     }
 }

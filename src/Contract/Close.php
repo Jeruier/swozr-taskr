@@ -6,7 +6,7 @@
  * Time: 17:09
  */
 
-namespace Swozr\Taskr\Server\contract;
+namespace Swozr\Taskr\Server\Contract;
 
 
 interface Close

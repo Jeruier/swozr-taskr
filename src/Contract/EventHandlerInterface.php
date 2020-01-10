@@ -6,7 +6,7 @@
  * Time: 10:20
  */
 
-namespace Swozr\Taskr\Server\contract;
+namespace Swozr\Taskr\Server\Contract;
 
 
 interface EventHandlerInterface

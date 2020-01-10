@@ -6,7 +6,7 @@
  * Time: 17:10
  */
 
-namespace Swozr\Taskr\Server\contract;
+namespace Swozr\Taskr\Server\Contract;
 
 
 interface PipeMessage

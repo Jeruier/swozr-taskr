@@ -11,6 +11,8 @@ namespace Swozr\Taskr\Server;
 use Swoole\Process;
 use Swoole\Server as SwooleServer;
 use Swozr\Taskr\Server\Base\Event;
+use Swozr\Taskr\Server\Base\BaseTask;
+use Swozr\Taskr\Server\Base\TaskDispatcher;
 use Swozr\Taskr\Server\Event\ServerEvent;
 use Swozr\Taskr\Server\Event\SwooleEvent;
 use Swozr\Taskr\Server\Exception\ServerException;
@@ -20,6 +22,11 @@ class Server
     const ROLE_WORK_PROCESS_WORKER = 'worker';  //Worker进程
 
     const ROLE_WORK_PROCESS_TASK = 'task';  //Task进程
+
+    /**
+     * @var Server
+     */
+    private static $server;
 
     /**
      * Default host address
@@ -108,11 +115,23 @@ class Server
     protected $logFile = '/tmp/swoole.log';
 
     /**
+     * @var TaskDispatcher
+     */
+    protected $taskDispatcher;
+
+
+    /**
+     * @var string
+     */
+    protected $sign;
+
+    /**
      * Server constructor
      */
     public function __construct()
     {
         $this->setting = $this->defaultSetting();
+        $this->sign = uniqid();
     }
 
     /**
@@ -125,12 +144,28 @@ class Server
     }
 
     /**
+     * @return string
+     */
+    public function getHost()
+    {
+        return $this->host;
+    }
+
+    /**
      * set host
      * @param string $host
      */
     public function setHost(string $host)
     {
         $this->host = $host;
+    }
+
+    /**
+     * @return int
+     */
+    public function getPort()
+    {
+        return $this->port;
     }
 
     /**
@@ -143,6 +178,14 @@ class Server
     }
 
     /**
+     * @return int
+     */
+    public function getMode()
+    {
+        return $this->mode;
+    }
+
+    /**
      * set mode
      * @param int $mode
      */
@@ -152,6 +195,14 @@ class Server
             throw new \InvalidArgumentException('invalid server mode value: ' . $mode);
         }
         $this->mode = $mode;
+    }
+
+    /**
+     * @return int
+     */
+    public function getType()
+    {
+        return $this->type;
     }
 
     /**
@@ -177,6 +228,14 @@ class Server
     }
 
     /**
+     * @return string
+     */
+    public function getPidName()
+    {
+        return $this->pidName;
+    }
+
+    /**
      * set pid name
      * @param $pidName
      */
@@ -186,12 +245,28 @@ class Server
     }
 
     /**
+     * @return string
+     */
+    public function getPidFile()
+    {
+        return $this->pidFile;
+    }
+
+    /**
      * set pid file
      * @param string $pidFile
      */
     public function setPidFile(string $pidFile)
     {
         $pidFile && $this->pidFile = $pidFile;
+    }
+
+    /**
+     * @return string
+     */
+    public function getLogFile()
+    {
+        return $this->logFile;
     }
 
     /**
@@ -219,6 +294,15 @@ class Server
     public function getManagerPid()
     {
         return $this->managerPid;
+    }
+
+    /**
+     * sign
+     * @return string
+     */
+    public function getSign()
+    {
+        return $this->sign;
     }
 
     /**
@@ -262,6 +346,30 @@ class Server
     protected function getWorkProcessRole(int $workerId): string
     {
         return $workerId >= $this->setting['worker_num'] ? self::ROLE_WORK_PROCESS_TASK : self::ROLE_WORK_PROCESS_WORKER;
+    }
+
+    /**
+     * @param Server $server
+     */
+    public static function setServer(Server $server)
+    {
+        self::$server = $server;
+    }
+
+    /**
+     * @return Server
+     */
+    public static function getServer()
+    {
+        return self::$server;
+    }
+
+    /**
+     * @return Server
+     */
+    public function getSwooleServer()
+    {
+        return $this->swooleServer;
     }
 
     /**
@@ -329,6 +437,10 @@ class Server
         // Trigger event
         Swozr::trigger(ServerEvent::BEFORE_START, $this);
 
+        self::$server = $this;
+
+        $this->taskDispatcher = new TaskDispatcher(); //任务调度器
+
         $this->swooleServer->start();
     }
 
@@ -352,6 +464,7 @@ class Server
             return false;
         }
         $signal = $onlyTaskWorker ? 12 : 10; //用户信号
+
         return Process::kill($this->masterPid, $signal);
     }
 
@@ -372,6 +485,7 @@ class Server
 
         echo "The {$this->pidName} process stopped." . PHP_EOL;
         file_exists($this->pidFile) && @unlink($this->pidFile);
+
         return true;
     }
 
@@ -392,6 +506,7 @@ class Server
 
         //start event
         Swozr::trigger(SwooleEvent::START, $this);
+
     }
 
     /**
@@ -490,19 +605,31 @@ class Server
      * @param SwooleServer $serv
      * @param int $fd
      * @param int $reactorId
-     * @param string $data
+     * @param string $str
      */
-    public function onReceive(SwooleServer $serv, int $fd, int $reactorId, string $data)
+    public function onReceive(SwooleServer $serv, int $fd, int $reactorId, string $str)
     {
-        //@todo onReceive
+        Swozr::trigger(SwooleEvent::RECEIVE, $serv, compact('fd', 'reactorId', 'str'));
+
+        [$class, $data, $taskType, $delay] = BaseTask::unpackClient($str);
+
+        //投递
+        if (BaseTask::TYPE_DELAY == $taskType) {
+            //延迟任务
+            \Swoole\Timer::after($delay, function () use ($class, $data, $taskType, $delay) {
+                $taskId = BaseTask::push($class, $data, $taskType, $delay);
+            });
+        } else {
+            $taskId = BaseTask::push($class, $data, $taskType, $delay);
+        }
     }
 
     /**
      * 协程任务onSyncTask
-     * @param $serv
+     * @param SwooleServer $serv
      * @param SwooleServer\Task $task
      */
-    public function onSyncTask($serv, \Swoole\Server\Task $task)
+    public function onSyncTask(SwooleServer $serv, \Swoole\Server\Task $task)
     {
 
     }
@@ -512,12 +639,20 @@ class Server
      * @param SwooleServer $serv
      * @param int $taskId
      * @param int $srcWorkerId
-     * @param mixed $data
+     * @param string $str
      */
-    public function onTask(SwooleServer $serv, int $taskId, int $srcWorkerId, $data)
+    public function onTask(SwooleServer $serv, int $taskId, int $srcWorkerId, $str)
     {
-        //@todo ontask
-        echo __METHOD__ . PHP_EOL;
+        echo __METHOD__ . PHP_EOL; //@todo need del
+        Swozr::trigger(SwooleEvent::TASK, $serv, compact('taskId', 'srcWorkerId', 'str'));
+
+        [$class, $data, $attributes] = BaseTask::unpack($str);
+        $attributes['taskId'] = $taskId;
+        $attributes['srcWorkerId'] = $srcWorkerId;
+
+        $result = $this->taskDispatcher->dispatch($class, $data, $attributes);
+
+        return $result; //return数据触发onFinish事件
     }
 
     /**
@@ -529,6 +664,7 @@ class Server
     public function onFinish(SwooleServer $serv, int $taskId, string $data)
     {
         //@todo onFinish
+        echo __METHOD__ . PHP_EOL; //@todo need del
     }
 
     /**
@@ -540,7 +676,7 @@ class Server
      */
     public function onPipeMessage(SwooleServer $serv, int $srcWorkerId, $message)
     {
-        //@todo 可以删
+        //@todo 暂未使用
     }
 
     /**
