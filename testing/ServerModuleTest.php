@@ -20,4 +20,4 @@ class ServerModuleTest
 
 }
 $server = new Server();
-$server->start();
+$server->setDebug(true)->start();

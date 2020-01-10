@@ -12,6 +12,8 @@ use Swoole\Process;
 use Swoole\Server as SwooleServer;
 use Swozr\Taskr\Server\Base\Event;
 use Swozr\Taskr\Server\Base\BaseTask;
+use Swozr\Taskr\Server\Base\EventManager;
+use Swozr\Taskr\Server\Base\ExceptionManager;
 use Swozr\Taskr\Server\Base\TaskDispatcher;
 use Swozr\Taskr\Server\Event\ServerEvent;
 use Swozr\Taskr\Server\Event\SwooleEvent;
@@ -119,11 +121,28 @@ class Server
      */
     protected $taskDispatcher;
 
-
     /**
      * @var string
      */
     protected $sign;
+
+    /**
+     * 异常管理器
+     * @var ExceptionManager
+     */
+    public $execptionManager;
+
+    /**
+     * 事件管理器
+     * @var EventManager
+     */
+    public $eventManager;
+
+    /**
+     * 是否调试模式运行
+     * @var bool
+     */
+    public $debug = false;
 
     /**
      * Server constructor
@@ -132,7 +151,10 @@ class Server
     {
         $this->setting = $this->defaultSetting();
         $this->sign = uniqid();
+        $this->execptionManager = new ExceptionManager();  //异常处理管理
+        $this->eventManager = EventManager::getInstance();  //事件管理
     }
+
 
     /**
      * 设置运行时的各项参数
@@ -306,12 +328,31 @@ class Server
     }
 
     /**
+     * @param bool $debug
+     * @return $this
+     */
+    public function setDebug(bool $debug)
+    {
+        $this->debug = $debug;
+        return $this;
+    }
+
+    /**
      * 是否守护进程运行
      * @return bool
      */
-    protected function isDaemon(): bool
+    public function isDaemon(): bool
     {
         return !$this->setting['daemonize'] ? false : true;
+    }
+
+    /**
+     * 是否调运行
+     * @return bool
+     */
+    public function isDebug(): bool
+    {
+        return $this->debug;
     }
 
     /**
@@ -609,18 +650,22 @@ class Server
      */
     public function onReceive(SwooleServer $serv, int $fd, int $reactorId, string $str)
     {
-        Swozr::trigger(SwooleEvent::RECEIVE, $serv, compact('fd', 'reactorId', 'str'));
+        try{
+            Swozr::trigger(SwooleEvent::RECEIVE, $serv, compact('fd', 'reactorId', 'str'));
 
-        [$class, $data, $taskType, $delay] = BaseTask::unpackClient($str);
+            [$class, $data, $taskType, $delay] = BaseTask::unpackClient($str);
 
-        //投递
-        if (BaseTask::TYPE_DELAY == $taskType) {
-            //延迟任务
-            \Swoole\Timer::after($delay, function () use ($class, $data, $taskType, $delay) {
+            //投递
+            if (BaseTask::TYPE_DELAY == $taskType) {
+                //延迟任务
+                \Swoole\Timer::after($delay, function () use ($class, $data, $taskType, $delay) {
+                    $taskId = BaseTask::push($class, $data, $taskType, $delay);
+                });
+            } else {
                 $taskId = BaseTask::push($class, $data, $taskType, $delay);
-            });
-        } else {
-            $taskId = BaseTask::push($class, $data, $taskType, $delay);
+            }
+        }catch (\Exception $e){
+            $this->execptionManager->handler($e); //execption handler
         }
     }
 
@@ -643,16 +688,18 @@ class Server
      */
     public function onTask(SwooleServer $serv, int $taskId, int $srcWorkerId, $str)
     {
-        echo __METHOD__ . PHP_EOL; //@todo need del
-        Swozr::trigger(SwooleEvent::TASK, $serv, compact('taskId', 'srcWorkerId', 'str'));
+        try {
+            Swozr::trigger(SwooleEvent::TASK, $serv, compact('taskId', 'srcWorkerId', 'str'));
 
-        [$class, $data, $attributes] = BaseTask::unpack($str);
-        $attributes['taskId'] = $taskId;
-        $attributes['srcWorkerId'] = $srcWorkerId;
+            [$class, $data, $attributes] = BaseTask::unpack($str);
+            $attributes['taskId'] = $taskId;
+            $attributes['srcWorkerId'] = $srcWorkerId;
 
-        $result = $this->taskDispatcher->dispatch($class, $data, $attributes);
-
-        return $result; //return数据触发onFinish事件
+            $result = $this->taskDispatcher->dispatch($class, $data, $attributes);
+            return $result; //return数据触发onFinish事件
+        } catch (\Exception $e) {
+            $this->execptionManager->handler($e); // //execption handler
+        }
     }
 
     /**
@@ -663,8 +710,7 @@ class Server
      */
     public function onFinish(SwooleServer $serv, int $taskId, string $data)
     {
-        //@todo onFinish
-        echo __METHOD__ . PHP_EOL; //@todo need del
+        Swozr::trigger(SwooleEvent::FINISH, $serv, compact('taskId', 'data'));
     }
 
     /**
@@ -676,7 +722,24 @@ class Server
      */
     public function onPipeMessage(SwooleServer $serv, int $srcWorkerId, $message)
     {
-        //@todo 暂未使用
+        //@todo 暂无需要
+    }
+
+    /**
+     * @param string $msg
+     * @param array $data
+     * @param string $type
+     */
+    public function log(string $msg, array $data = [], string $type = 'info')
+    {
+        if (!$this->debug) {
+            return;
+        }
+        $msg = "[WorkerId:] " . $msg;
+        $dataString = $data ? PHP_EOL . json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : '';
+        $msg = sprintf('%s [%s]%s %s', date('Y/m/d H:i:s'), $type, trim($msg), $dataString);
+        $msg = preg_replace('/<[\/]?[a-zA-Z=;]+>/', '', $msg);
+        fwrite(STDOUT, $msg . PHP_EOL);
     }
 
     /**
