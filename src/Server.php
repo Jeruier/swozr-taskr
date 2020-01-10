@@ -14,6 +14,7 @@ use Swozr\Taskr\Server\Base\Event;
 use Swozr\Taskr\Server\Base\BaseTask;
 use Swozr\Taskr\Server\Base\EventManager;
 use Swozr\Taskr\Server\Base\ExceptionManager;
+use Swozr\Taskr\Server\Base\ListenerRegister;
 use Swozr\Taskr\Server\Base\TaskDispatcher;
 use Swozr\Taskr\Server\Event\ServerEvent;
 use Swozr\Taskr\Server\Event\SwooleEvent;
@@ -133,12 +134,6 @@ class Server
     public $execptionManager;
 
     /**
-     * 事件管理器
-     * @var EventManager
-     */
-    public $eventManager;
-
-    /**
      * 是否调试模式运行
      * @var bool
      */
@@ -149,12 +144,19 @@ class Server
      */
     public function __construct()
     {
+        //init
+        $this->init();
+    }
+
+    private function init()
+    {
         $this->setting = $this->defaultSetting();
         $this->sign = uniqid();
         $this->execptionManager = new ExceptionManager();  //异常处理管理
-        $this->eventManager = EventManager::getInstance();  //事件管理
-    }
 
+        //监听者注册
+        ListenerRegister::register(EventManager::getInstance());
+    }
 
     /**
      * 设置运行时的各项参数
@@ -466,15 +468,6 @@ class Server
         //After add event
         Swozr::trigger(ServerEvent::AFTER_ADDED_EVENT, $this);
 
-        // Before bind process
-        Swozr::trigger(ServerEvent::BEFORE_ADDED_PROCESS, $this);
-
-        // Add Process
-        Swozr::trigger(ServerEvent::ADDED_PROCESS, $this);
-
-        // After bind process
-        Swozr::trigger(ServerEvent::AFTER_ADDED_PROCESS, $this);
-
         // Trigger event
         Swozr::trigger(ServerEvent::BEFORE_START, $this);
 
@@ -650,7 +643,7 @@ class Server
      */
     public function onReceive(SwooleServer $serv, int $fd, int $reactorId, string $str)
     {
-        try{
+        try {
             Swozr::trigger(SwooleEvent::RECEIVE, $serv, compact('fd', 'reactorId', 'str'));
 
             [$class, $data, $taskType, $delay] = BaseTask::unpackClient($str);
@@ -664,7 +657,7 @@ class Server
             } else {
                 $taskId = BaseTask::push($class, $data, $taskType, $delay);
             }
-        }catch (\Exception $e){
+        } catch (\Exception $e) {
             $this->execptionManager->handler($e); //execption handler
         }
     }

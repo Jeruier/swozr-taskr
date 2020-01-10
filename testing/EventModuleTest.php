@@ -81,13 +81,13 @@ $eventModuleTest = new EventModuleTest();
 //类方法
 $eventModuleTest->registerEvent(ServerEvent::AFTER_ADDED_EVENT, '\SwozrTest\Taskr\Server\EventModuleTest@handleEvent');
 //静态方法
-$eventModuleTest->registerEvent(ServerEvent::AFTER_EVENT, '\SwozrTest\Taskr\Server\EventModuleTest@staticHandleEvent');
+$eventModuleTest->registerEvent(ServerEvent::AFTER_ADDED_EVENT, '\SwozrTest\Taskr\Server\EventModuleTest@staticHandleEvent');
 //实现事件处理接口的类
 $eventModuleTest->registerEvent(ServerEvent::BEFORE_ADDED_EVENT, '\SwozrTest\Taskr\Server\Listener\TestHandleListener');
 //可做函数方法调用的类
 $eventModuleTest->registerEvent(ServerEvent::BEFORE_ADDED_EVENT, '\SwozrTest\Taskr\Server\EventModuleTest');
 //匿名函数
-$eventModuleTest->registerEvent(ServerEvent::BEFORE_START_EVENT, function ($event) {
+$eventModuleTest->registerEvent(ServerEvent::BEFORE_ADDED_EVENT, function ($event) {
     echo "closures\n";
 });
 //一次性注册

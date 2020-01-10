@@ -14,85 +14,75 @@ class ServerEvent
     /**
      * Before set swoole settings
      */
-    const BEFORE_SETTING = 'server.setting.before';
+    const BEFORE_SETTING = 'beforeSetting';
 
     /**
      * Before add swoole events
      */
-    const BEFORE_ADDED_EVENT = 'server.added.event.before';
+    const BEFORE_ADDED_EVENT = 'beforeAddedEvent';
 
     /**
      * After add swoole events
      */
-    const AFTER_ADDED_EVENT = 'server.added.event.after';
+    const AFTER_ADDED_EVENT = 'afterAddedEvent';
 
     /**
      * Before add process(es)
      */
-    const BEFORE_ADDED_PROCESS = 'server.added.process.before';
+    const BEFORE_ADDED_PROCESS = 'addedProcessBefore';
 
     /**
      * Add process(es)
      */
-    const ADDED_PROCESS = 'server.added.process';
+    const ADDED_PROCESS = 'addedProcess';
 
     /**
      * After each process is successfully added
      */
-    const AFTER_ADDED_PROCESS = 'server.added.process.after';
+    const AFTER_ADDED_PROCESS = 'addedProcessAfter';
 
     /**
      * before start server event
      */
-    const BEFORE_START = 'server.start.before';
+    const BEFORE_START = 'beforeStart';
 
     /**
      * On task process start event
      */
-    const TASK_PROCESS_START = 'server.process.task.start';
+    const TASK_PROCESS_START = 'taskProcessStart';
 
     /**
      * On task process start event
      */
-    const TASK_PROCESS_STOP = 'server.process.task.stop';
+    const TASK_PROCESS_STOP = 'taskProcessStop';
 
     /**
      * On work process start event
      */
-    const WORK_PROCESS_START = 'server.process.work.start';
+    const WORK_PROCESS_START = 'workProcessStart';
 
     /**
      * On work process start event
      */
-    const WORK_PROCESS_STOP = 'server.process.work.stop';
+    const WORK_PROCESS_STOP = 'workProcessStop';
 
     /**
      * After after event
      */
-    const AFTER_EVENT = 'server.event.after';
+    const AFTER_EVENT = 'eventAfter';
 
     /**
      * Before shutdown event
      */
-    const BEFORE_SHUTDOWN_EVENT = 'server.event.shutdown.before';
+    const BEFORE_SHUTDOWN_EVENT = 'shutdownBefore';
 
     /**
      * Before start event
      */
-    const BEFORE_START_EVENT = 'server.event.start.before';
+    const BEFORE_START_EVENT = 'eventStartBefore';
 
     /**
      * Before worker error event
      */
-    const BEFORE_WORKER_ERROR_EVENT = 'server.event.worker.error.before';
-
-    /**
-     * Before worker start event
-     */
-    const BEFORE_WORKER_START_EVENT = 'server.event.worker.start.before';
-
-    /**
-     * Before worker stop event
-     */
-    const BEFORE_WORKER_STOP_EVENT = 'server.event.worker.stop.before';
+    const BEFORE_WORKER_ERROR_EVENT = 'workerErrorBefore';
 }
