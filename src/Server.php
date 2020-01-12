@@ -589,14 +589,14 @@ class Server
     public function onWorkerStart(SwooleServer $serv, int $workerId)
     {
         //worker start event
-        Swozr::trigger(SwooleEvent::WORKER_START, $serv, $workerId);
+        Swozr::trigger(SwooleEvent::WORKER_START, $serv, compact('workerId'));
 
         $processRole = $this->getWorkProcessRole($workerId);
         Swozr::setProcessName(sprintf("%s %s process", $this->pidName, $processRole));
 
         //worker|task start event
         $eventName = $processRole == self::ROLE_WORK_PROCESS_WORKER ? ServerEvent::WORK_PROCESS_START : ServerEvent::TASK_PROCESS_START;
-        Swozr::trigger($eventName, $this, $workerId);
+        Swozr::trigger($eventName, $this, compact('workerId'));
     }
 
     /**
@@ -607,11 +607,11 @@ class Server
     public function onWorkerStop(SwooleServer $serv, int $workerId)
     {
         //worker end event
-        Swozr::trigger(SwooleEvent::WORKER_STOP, $serv, $workerId);
+        Swozr::trigger(SwooleEvent::WORKER_STOP, $serv, compact('workerId'));
 
         //worker|task stop event
         $eventName = $this->getWorkProcessRole($workerId) == self::ROLE_WORK_PROCESS_WORKER ? ServerEvent::WORK_PROCESS_STOP : ServerEvent::TASK_PROCESS_STOP;
-        Swozr::trigger($eventName, $this, $workerId);
+        Swozr::trigger($eventName, $this, compact('workerId'));
     }
 
     /**
@@ -699,11 +699,11 @@ class Server
      * onFinish
      * @param SwooleServer $serv
      * @param int $taskId
-     * @param string $data
+     * @param string $str
      */
-    public function onFinish(SwooleServer $serv, int $taskId, string $data)
+    public function onFinish(SwooleServer $serv, int $taskId, string $str)
     {
-        Swozr::trigger(SwooleEvent::FINISH, $serv, compact('taskId', 'data'));
+        Swozr::trigger(SwooleEvent::FINISH, $serv, compact('taskId', 'str'));
     }
 
     /**
@@ -720,17 +720,18 @@ class Server
 
     /**
      * @param string $msg
-     * @param array $data
+     * @param $data
+     * @param string $eventName
      * @param string $type
      */
-    public function log(string $msg, array $data = [], string $type = 'info')
+    public function log(string $msg, $data, string $eventName = '', string $type = 'info')
     {
         if (!$this->debug) {
             return;
         }
-        $msg = "[WorkerId:] " . $msg;
-        $dataString = $data ? PHP_EOL . json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : '';
-        $msg = sprintf('%s [%s]%s %s', date('Y/m/d H:i:s'), $type, trim($msg), $dataString);
+
+        $dataString = is_array($data) ? PHP_EOL . json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : $data;
+        $msg = sprintf('%s (%s) [%s]%s %s', date('Y/m/d H:i:s'), $eventName, $type, trim($msg), $dataString);
         $msg = preg_replace('/<[\/]?[a-zA-Z=;]+>/', '', $msg);
         fwrite(STDOUT, $msg . PHP_EOL);
     }

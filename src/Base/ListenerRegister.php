@@ -42,7 +42,7 @@ final class ListenerRegister
         //载入包内的已定义事件监听类的监听者
         $events = [SwooleEvent::class, ServerEvent::class]; //swoole事件，定义的流程性事件
         $swooleEventNames = [];
-        foreach ($events as $className){
+        foreach ($events as $className) {
             $reflection = new \ReflectionClass($className);
             $swooleEventNames = array_merge($swooleEventNames, $reflection->getConstants());
         }

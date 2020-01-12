@@ -19,10 +19,10 @@ class Swozr
      * 触发事件
      * @param string|\Swozr\Taskr\Server\Contract\EventInterface $event
      * @param null $target
-     * @param mixed ...$params
+     * @param mixed $params
      * @return bool
      */
-    public static function trigger($event, $target = null, ...$params)
+    public static function trigger($event, $target = null, $params = [])
     {
         return EventManager::getInstance()->trigger($event, $target, $params);
     }
@@ -68,5 +68,27 @@ class Swozr
     public static function swooleServer()
     {
         return self::server()->getSwooleServer();
+    }
+
+    /**
+     * 制作日志前缀，主要记录工作进程id等
+     * @param array $arr
+     * @param array|string $except 除外字段
+     * @return string
+     */
+    public static function makeLogPrefix(array $arr, $except){
+        if (empty($arr)) return '';
+        $str = "[";
+        foreach ($arr as $key => $val){
+            if ((is_array($except) && in_array($key, $except)) || (is_string($except) && $key == $except)){
+                //除外
+                continue;
+            }
+            $str .= "{$key}:{$val},";
+        }
+        $str = rtrim($str, ',');
+        $str .= " ]";
+
+        return $str;
     }
 }

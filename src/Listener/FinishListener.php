@@ -1,9 +1,9 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: Zhangrui
- * Date: 2020/1/10
- * Time: 17:46
+ * User: zhangrui
+ * Date: 2020/1/12
+ * Time: 7:32 PM
  */
 
 namespace Swozr\Taskr\Server\Listener;
@@ -13,7 +13,7 @@ use Swozr\Taskr\Server\Contract\EventHandlerInterface;
 use Swozr\Taskr\Server\Contract\EventInterface;
 use Swozr\Taskr\Server\Swozr;
 
-class TaskListener implements EventHandlerInterface
+class FinishListener implements EventHandlerInterface
 {
     public function handle(EventInterface $event)
     {
