@@ -1,5 +1,5 @@
 {
-    "name": "jeruier/task-serv",
+    "name": "jeruier/swozr-taskr",
     "description": "task processing service component",
     "type": "library",
     "require": {
