@@ -47,6 +47,7 @@ final class ListenerRegister
             $swooleEventNames = array_merge($swooleEventNames, $reflection->getConstants());
         }
         foreach ($swooleEventNames as $eventName) {
+            if (!is_string($eventName)) continue;
             $listenerClass = '\Swozr\Taskr\Server\Listener\\' . ucfirst($eventName) . 'Listener';
             if (class_exists($listenerClass)) {
                 $eventManager->addListener($eventName, $listenerClass);
