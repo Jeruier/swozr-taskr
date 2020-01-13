@@ -8,7 +8,6 @@
 
 namespace Swozr\Taskr\Server;
 
-use Co\Socket\Exception;
 use Swoole\Process;
 use Swoole\Server as SwooleServer;
 use Swozr\Taskr\Server\Base\Event;
@@ -171,7 +170,7 @@ class Server
      * 设置运行时的各项参数
      * @param $setting
      */
-    public function setSetting($setting)
+    public function setSetting(array $setting)
     {
         $this->setting = array_merge($this->setting, $setting);
     }

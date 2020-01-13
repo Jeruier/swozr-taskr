@@ -19,3 +19,51 @@ php任务服务组件
 ```bash
 composer require jeruier/swozr-taskr
 ```
+
+## 配置参数
+
+在可以配置应用组件的框架下配置taskr组件，你可以看到taskr数组里面包含了taskr的基本信息
+
+```php
+    'task' => [
+        'class' => '\Swozr\Taskr\Server\Taskr'
+        'host' => '0.0.0.0',
+        'port' => 9501,
+        'listener' => [
+        ],
+        'on' => [
+       
+        ],
+        'setting' => [
+        ],
+        'exceptionHandler' => [
+        ],
+        'type' => SWOOLE_SOCK_TCP
+    ],
+```
+> 例如Yii框架可以使用 `Yii:$app->task->run();` 来启动服务
+
+类配置参数启动
+```php
+    $config = [
+          'host' => '0.0.0.0',
+          'port' => 9501,
+          'listener' => [
+          ],
+          'on' => [
+         
+          ],
+          'setting' => [
+          ],
+          'exceptionHandler' => [
+          ],
+          'type' => SWOOLE_SOCK_TCP
+   ];
+```
+>使用`(new \Swozr\Taskr\Server\Taskr($config))->run()` 来启动服务
+
+#### 可配置项：
+   * `host` 服务地址
+   * `port` 端口
+   * `listener` 指定其他一同启动的服务，添加端口服务监听，可以多个
+        *    时间监听者
