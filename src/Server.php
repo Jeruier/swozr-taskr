@@ -159,6 +159,14 @@ class Server
     }
 
     /**
+     * 配置异常处理管理器
+     * @param ExceptionManager $em
+     */
+    public function setExecptionManager(ExceptionManager $em){
+        $this->execptionManager = $em;
+    }
+
+    /**
      * 设置运行时的各项参数
      * @param $setting
      */
@@ -472,6 +480,7 @@ class Server
         Swozr::trigger(ServerEvent::BEFORE_START, $this);
 
         self::$server = $this;
+        Swozr::$server = $this;
 
         $this->taskDispatcher = new TaskDispatcher(); //任务调度器
 

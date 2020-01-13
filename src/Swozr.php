@@ -13,7 +13,10 @@ use Swozr\Taskr\Server\Base\EventManager;
 
 class Swozr
 {
-    public static $app;
+    /**
+     * @var Server
+     */
+    public static $server;
 
     /**
      * 触发事件
