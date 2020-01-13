@@ -91,7 +91,7 @@ class Server
      * 用于进程名称
      * @var string
      */
-    protected $pidName = 'swozr';
+    protected $pidName = 'swozr-taskr';
 
     /**
      * pid file 内容 matsterPid,managerPid

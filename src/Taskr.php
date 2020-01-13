@@ -84,7 +84,7 @@ class Taskr
      * 用于进程名称
      * @var string
      */
-    public $pidName = 'swozr';
+    public $pidName = 'swozr-taskr';
 
     /**
      * pid file 内容 matsterPid,managerPid
