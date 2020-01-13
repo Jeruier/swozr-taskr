@@ -8,6 +8,7 @@
 
 namespace Swozr\Taskr\Server;
 
+use Co\Socket\Exception;
 use Swoole\Process;
 use Swoole\Server as SwooleServer;
 use Swozr\Taskr\Server\Base\Event;
@@ -648,14 +649,14 @@ class Server
      * @param SwooleServer $serv
      * @param int $fd
      * @param int $reactorId
-     * @param string $str
+     * @param string $data
      */
-    public function onReceive(SwooleServer $serv, int $fd, int $reactorId, string $str)
+    public function onReceive(SwooleServer $serv, int $fd, int $reactorId, string $data)
     {
         try {
-            Swozr::trigger(SwooleEvent::RECEIVE, $serv, compact('fd', 'reactorId', 'str'));
+            Swozr::trigger(SwooleEvent::RECEIVE, $serv, compact('fd', 'reactorId', 'data'));
 
-            [$class, $data, $taskType, $delay] = BaseTask::unpackClient($str);
+            [$class, $data, $taskType, $delay] = BaseTask::unpackClient($data);
 
             //投递
             if (BaseTask::TYPE_DELAY == $taskType) {
@@ -686,14 +687,14 @@ class Server
      * @param SwooleServer $serv
      * @param int $taskId
      * @param int $srcWorkerId
-     * @param string $str
+     * @param string $data
      */
-    public function onTask(SwooleServer $serv, int $taskId, int $srcWorkerId, $str)
+    public function onTask(SwooleServer $serv, int $taskId, int $srcWorkerId, $data)
     {
         try {
-            Swozr::trigger(SwooleEvent::TASK, $serv, compact('taskId', 'srcWorkerId', 'str'));
+            Swozr::trigger(SwooleEvent::TASK, $serv, compact('taskId', 'srcWorkerId', 'data'));
 
-            [$class, $data, $attributes] = BaseTask::unpack($str);
+            [$class, $data, $attributes] = BaseTask::unpack($data);
             $attributes['taskId'] = $taskId;
             $attributes['srcWorkerId'] = $srcWorkerId;
 
@@ -710,9 +711,9 @@ class Server
      * @param int $taskId
      * @param string $str
      */
-    public function onFinish(SwooleServer $serv, int $taskId, string $str)
+    public function onFinish(SwooleServer $serv, int $taskId, string $data)
     {
-        Swozr::trigger(SwooleEvent::FINISH, $serv, compact('taskId', 'str'));
+        Swozr::trigger(SwooleEvent::FINISH, $serv, compact('taskId', 'data'));
     }
 
     /**
@@ -730,17 +731,17 @@ class Server
     /**
      * @param string $msg
      * @param $data
-     * @param string $eventName
+     * @param string $name
      * @param string $type
      */
-    public function log(string $msg, $data, string $eventName = '', string $type = 'info')
+    public function log(string $msg, $data, string $name = '', string $type = Swozr::LOG_LEVEL_INFO)
     {
         if (!$this->debug) {
             return;
         }
 
         $dataString = is_array($data) ? PHP_EOL . json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : $data;
-        $msg = sprintf('%s (%s) [%s]%s %s', date('Y/m/d H:i:s'), $eventName, $type, trim($msg), $dataString);
+        $msg = sprintf('[%s] [%s] [%s]：%s %s', date('Y-m-d H:i:s'), $name, $type, trim($msg), $dataString);
         $msg = preg_replace('/<[\/]?[a-zA-Z=;]+>/', '', $msg);
         fwrite(STDOUT, $msg . PHP_EOL);
     }

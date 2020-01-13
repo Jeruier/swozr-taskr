@@ -16,9 +16,12 @@ use Swozr\Taskr\Server\Swozr;
 use Swozr\Taskr\Server\Taskr;
 
 require __DIR__ . '/../vendor/autoload.php';
+
 class ServerModuleTest
 {
 
 }
 
-(new Taskr())->run();
+(new Taskr([
+    'debug' => true
+]))->run();

@@ -9,7 +9,9 @@
 namespace Swozr\Taskr\Server;
 
 
+use Swozr\Taskr\Server\Base\Event;
 use Swozr\Taskr\Server\Base\EventManager;
+use Swozr\Taskr\Server\Contract\EventInterface;
 
 class Swozr
 {
@@ -17,6 +19,22 @@ class Swozr
      * @var Server
      */
     public static $server;
+
+    /**
+     * waring级别日志
+     */
+    const LOG_LEVEL_WARNING = 'waring';
+
+    /**
+     * info级别日志
+     */
+    const LOG_LEVEL_INFO = 'info';
+
+    /**
+     * error级别日志
+     */
+    const LOG_LEVEL_ERROR = 'error';
+
 
     /**
      * 触发事件
@@ -74,24 +92,33 @@ class Swozr
     }
 
     /**
-     * 制作日志前缀，主要记录工作进程id等
+     * 制作日志前缀，主要记录工作进程id等 [workId: , ...]
      * @param array $arr
-     * @param array|string $except 除外字段
+     * @param array|string $fields 指定字段
      * @return string
      */
-    public static function makeLogPrefix(array $arr, $except){
+    public static function makeLogPrefix(array $arr, $fields = Event::LOG_PREFIX_FIELDS)
+    {
         if (empty($arr)) return '';
-        $str = "[";
-        foreach ($arr as $key => $val){
-            if ((is_array($except) && in_array($key, $except)) || (is_string($except) && $key == $except)){
-                //除外
-                continue;
+        $str = "";
+        foreach ($arr as $key => $val) {
+            if ((is_array($fields) && in_array($key, $fields)) || (is_string($fields) && $key == $fields)) {
+                $str .= "{$key}:{$val},";
             }
-            $str .= "{$key}:{$val},";
         }
-        $str = rtrim($str, ',');
-        $str .= " ]";
+        $str = $str ? '[' . rtrim($str, ',') . ']' : '';
 
         return $str;
+    }
+
+    /**
+     * 制作事件日志
+     * @param Event $event
+     */
+    public static function makeEventLog(EventInterface $event)
+    {
+        $msg = self::makeLogPrefix($event->getParams(), 'data');
+        $msg .= $event->getMessage();
+        Swozr::server()->log($msg, $event->getData(), $event->getName());
     }
 }

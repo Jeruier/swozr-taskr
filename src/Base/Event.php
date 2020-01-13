@@ -14,6 +14,17 @@ use Swozr\Taskr\Server\Contract\EventInterface;
 class Event implements EventInterface
 {
     /**
+     * 事件里面的消息内容
+     */
+    const MESSAGE = 'msg';
+
+    /**
+     * 事件里面的data数据
+     */
+    const DATA = 'data';
+
+    const LOG_PREFIX_FIELDS = ['taskId', 'workerId', 'fd', 'reactorId', 'srcWorkerId', 'signal', 'exitCode', 'processRole', 'workerPid'];
+    /**
      * @var string 事件名称
      */
     private $name;
@@ -21,7 +32,7 @@ class Event implements EventInterface
     /**
      * @var array 事件参数
      */
-    private $params;
+    private $params = [];
 
     /**
      * @var mixed
@@ -46,7 +57,7 @@ class Event implements EventInterface
 
     public function setName(string $name)
     {
-       return $this->name = $name;
+        return $this->name = $name;
     }
 
     public function getName(): string
@@ -56,14 +67,14 @@ class Event implements EventInterface
 
     public function setParams(array $params)
     {
-        if (!$params){
+        if (!$params) {
             return false;
         }
         return $this->params = $params;
     }
 
     /**
-     * @return array
+     * @return mixed
      */
     public function getParam($key, $dafault = null)
     {
@@ -86,5 +97,23 @@ class Event implements EventInterface
     public function getTarget()
     {
         return $this->target;
+    }
+
+    /**
+     * 获取事件中的data
+     * @return mixed
+     */
+    public function getData()
+    {
+        return $this->getParam(self::DATA);
+    }
+
+    /**
+     * 获取事件中的消息
+     * @return mixed
+     */
+    public function getMessage()
+    {
+        return $this->getParam(self::MESSAGE);
     }
 }

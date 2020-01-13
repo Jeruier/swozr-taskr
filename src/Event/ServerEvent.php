@@ -85,4 +85,20 @@ class ServerEvent
      * Before worker error event
      */
     const BEFORE_WORKER_ERROR_EVENT = 'workerErrorBefore';
+
+    /**
+     * 任务投递失败
+     */
+    const TASK_PUSH_FAIL = 'taskPushFail';
+
+    /**
+     * 任务已投递
+     */
+    const TASK_PUSHED = 'taskPushed';
+
+    /**
+     * 任务开始消费
+     */
+    const TASK_CONSUME = 'taskConsume';
+
 }

@@ -17,7 +17,6 @@ class TaskListener implements EventHandlerInterface
 {
     public function handle(EventInterface $event)
     {
-        $msg = Swozr::makeLogPrefix($event->getParams(), 'str');
-        Swozr::server()->log($msg, $event->getParam('str'), $event->getName());
+        Swozr::makeEventLog($event);
     }
 }

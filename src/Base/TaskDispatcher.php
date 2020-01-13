@@ -9,7 +9,9 @@
 namespace Swozr\Taskr\Server\Base;
 
 
+use Swozr\Taskr\Server\Event\ServerEvent;
 use Swozr\Taskr\Server\Exception\TaskException;
+use Swozr\Taskr\Server\Swozr;
 
 class TaskDispatcher
 {
@@ -52,8 +54,16 @@ class TaskDispatcher
             $taskObject->$attribute = $val;
         }
 
+        //task pushed event
+        Swozr::trigger(new Event(ServerEvent::TASK_PUSHED));
         $taskObject->pushed();   //触发任务已投递
+
+        //task consume event
+        Swozr::trigger(new Event(ServerEvent::TASK_CONSUME), [
+            Event::DATA => $data
+        ]);
         $result = $taskObject->consume($data);
+
         $taskObject->finished();  //任务消费完成
 
         return $result;

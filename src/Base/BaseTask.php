@@ -9,6 +9,7 @@
 namespace Swozr\Taskr\Server\Base;
 
 
+use Swozr\Taskr\Server\Event\ServerEvent;
 use Swozr\Taskr\Server\Exception\TaskException;
 use Swozr\Taskr\Server\Helper\JsonHelper;
 use Swozr\Taskr\Server\Swozr;
@@ -203,9 +204,18 @@ abstract class BaseTask
                 self::Error(sprintf("Task error class=%d", $class));
             }
         } catch (\Exception $e) {
+            $msg = $e->getMessage();
+            //task push fail event
+            Swozr::trigger(new Event(ServerEvent::TASK_PUSH_FAIL, [
+                Event::MESSAGE => $msg,
+                Event::DATA => [
+                    'data' => $data,
+                    'delay' => $delay
+                ],
+            ]));
             /* @var BaseTask $class */
-            $class::pushFailure($data, $delay, $e->getMessage()); //任务投递失败
-            self::Error($e->getMessage());
+            $class::pushFailure($data, $delay, $msg); //任务投递失败
+            self::Error($msg);
         }
 
         return $taskId;
