@@ -11,6 +11,7 @@ namespace Swozr\Taskr\Server;
 
 use Swozr\Taskr\Server\Base\ExceptionManager;
 use Swozr\Taskr\Server\Base\ListenerRegister;
+use Swozr\Taskr\Server\Crontab\CrontabRegister;
 
 class Taskr
 {
@@ -105,6 +106,12 @@ class Taskr
     public $debug = false;
 
     /**
+     * 注册定时任务
+     * @var array
+     */
+    public $crontabs = [];
+
+    /**
      * swoole server
      * @var Server
      */
@@ -157,6 +164,13 @@ class Taskr
                 $execptionManager->addHandler($exceptionClass, $handlerClass);
             }
             $this->server->setExecptionManager($execptionManager);
+        }
+
+        //注册定时任务
+        if ($this->crontabs) {
+            foreach ($this->crontabs as $cron => $className) {
+                is_int($cron) ? CrontabRegister::register($className) : CrontabRegister::registerCron($cron, $className);
+            }
         }
     }
 

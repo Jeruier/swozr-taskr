@@ -62,7 +62,7 @@ class TaskDispatcher
         Swozr::trigger(new Event(ServerEvent::TASK_CONSUME), [
             Event::DATA => $data
         ]);
-        $result = $taskObject->consume($data);
+        $result = $taskObject->consume();
 
         $taskObject->finished();  //任务消费完成
 

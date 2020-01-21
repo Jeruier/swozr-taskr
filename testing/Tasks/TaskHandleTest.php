@@ -13,6 +13,8 @@ use Swozr\Taskr\Server\Base\BaseTask;
 
 class TaskHandleTest extends BaseTask
 {
+    public static $cron = '0/3 * * * * *';
+
     public static function pushFailure(array $data, int $delay, string $failMsg)
     {
         // TODO: Implement pushFailure() method.
@@ -25,7 +27,7 @@ class TaskHandleTest extends BaseTask
         echo __METHOD__ . PHP_EOL;
     }
 
-    public function consume($data): string
+    public function consume(): string
     {
         // TODO: Implement consume() method.
         return __METHOD__ . PHP_EOL;

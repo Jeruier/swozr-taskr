@@ -18,8 +18,10 @@ use Swozr\Taskr\Server\Tools\TaskrClient;
 abstract class BaseTask
 {
     const TYPE_ASYNC = 'async'; //正常异步任务
+
     const TYPE_DELAY = 'delay'; //延时任务
-    const TYPE_CRONTAB = 'timed'; //定时任务
+
+    const TYPE_CRONTAB = 'corntab'; //定时任务
 
     /**
      * @var int
@@ -35,7 +37,7 @@ abstract class BaseTask
 
     /**
      * 任务名称
-     * @var static
+     * @var string
      */
     protected $taskName;
 
@@ -61,7 +63,13 @@ abstract class BaseTask
      * task data
      * @var mixed
      */
-    protected $data;
+    public $data;
+
+    /**
+     * 定时任务规则
+     * @var string
+     */
+    public static $cron;
 
     public function __construct()
     {
@@ -115,6 +123,14 @@ abstract class BaseTask
     public function getDelay(): int
     {
         return $this->delay;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getData()
+    {
+        return $this->data;
     }
 
     /**
@@ -190,7 +206,8 @@ abstract class BaseTask
 
             $attributes = [
                 'taskType' => $taskType,
-                'delay' => $delay
+                'delay' => $delay,
+                'data' => $data
             ];
             $str = self::pack($class, $data, $attributes);
 
@@ -238,10 +255,9 @@ abstract class BaseTask
 
     /**
      * 消费任务
-     * @param $data
      * @return bool
      */
-    abstract public function consume($data): string;
+    abstract public function consume(): string;
 
     /**
      * 标记任务完成

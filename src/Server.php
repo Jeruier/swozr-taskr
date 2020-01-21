@@ -15,6 +15,7 @@ use Swozr\Taskr\Server\Base\BaseTask;
 use Swozr\Taskr\Server\Base\EventManager;
 use Swozr\Taskr\Server\Base\ExceptionManager;
 use Swozr\Taskr\Server\Base\ListenerRegister;
+use Swozr\Taskr\Server\Base\TaskBuilder;
 use Swozr\Taskr\Server\Base\TaskDispatcher;
 use Swozr\Taskr\Server\Event\ServerEvent;
 use Swozr\Taskr\Server\Event\SwooleEvent;
@@ -394,7 +395,7 @@ class Server
      * @param int $workerId
      * @return string
      */
-    protected function getWorkProcessRole(int $workerId): string
+    public function getWorkProcessRole(int $workerId): string
     {
         return $workerId >= $this->setting['worker_num'] ? self::ROLE_WORK_PROCESS_TASK : self::ROLE_WORK_PROCESS_WORKER;
     }
@@ -597,15 +598,22 @@ class Server
      */
     public function onWorkerStart(SwooleServer $serv, int $workerId)
     {
-        //worker start event
-        Swozr::trigger(SwooleEvent::WORKER_START, $serv, compact('workerId'));
+        try{
+            //worker start event
+            Swozr::trigger(SwooleEvent::WORKER_START, $serv, compact('workerId'));
 
-        $processRole = $this->getWorkProcessRole($workerId);
-        Swozr::setProcessName(sprintf("%s %s process", $this->pidName, $processRole));
+            $processRole = $this->getWorkProcessRole($workerId);
+            Swozr::setProcessName(sprintf("%s %s process", $this->pidName, $processRole));
 
-        //worker|task start event
-        $eventName = $processRole == self::ROLE_WORK_PROCESS_WORKER ? ServerEvent::WORK_PROCESS_START : ServerEvent::TASK_PROCESS_START;
-        Swozr::trigger($eventName, $this, compact('workerId'));
+            //worker|task start event
+            $eventName = $processRole == self::ROLE_WORK_PROCESS_WORKER ? ServerEvent::WORK_PROCESS_START : ServerEvent::TASK_PROCESS_START;
+            Swozr::trigger($eventName, $this, compact('workerId'));
+
+            //分配work进程做任务
+            TaskBuilder::assign($workerId);
+        }catch (\Exception $e){
+            $this->execptionManager->handler($e);
+        }
     }
 
     /**
@@ -633,6 +641,8 @@ class Server
      */
     public function onWorkerError(SwooleServer $serv, int $workerId, int $workerPid, int $exitCode, int $signal)
     {
+        $this->log("WorkerError: exitCode=$exitCode, Error worker: workerId=$workerId workerPid=$workerPid");
+
         //work error event
         $event = new Event(SwooleEvent::WORKER_ERROR, [
             'signal' => $signal,
@@ -733,7 +743,7 @@ class Server
      * @param string $name
      * @param string $type
      */
-    public function log(string $msg, $data, string $name = '', string $type = Swozr::LOG_LEVEL_INFO)
+    public function log(string $msg, $data = '', string $name = '', string $type = Swozr::LOG_LEVEL_INFO)
     {
         if (!$this->debug) {
             return;
