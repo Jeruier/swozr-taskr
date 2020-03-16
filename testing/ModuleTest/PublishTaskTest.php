@@ -6,7 +6,7 @@
  * Time: 15:44
  */
 
-namespace SwozrTest\Taskr\Server;
+namespace SwozrTest\Taskr\Server\ModuleTest;
 
 
 use Swozr\Taskr\Server\Tools\TaskrClient;

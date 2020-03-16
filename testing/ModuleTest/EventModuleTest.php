@@ -6,7 +6,7 @@
  * Time: 10:04
  */
 
-namespace SwozrTest\Taskr\Server;
+namespace SwozrTest\Taskr\Server\ModuleTest;
 
 
 use Swozr\Taskr\Server\Base\EventManager;

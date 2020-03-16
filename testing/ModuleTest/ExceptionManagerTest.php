@@ -6,7 +6,7 @@
  * Time: 15:16
  */
 
-namespace SwozrTest\Taskr\Server;
+namespace SwozrTest\Taskr\Server\ModuleTest;
 
 use Swozr\Taskr\Server\Base\ExceptionManager;
 use Swozr\Taskr\Server\Exception\TaskException;
