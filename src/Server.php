@@ -376,6 +376,7 @@ class Server
     }
 
     /**
+     * 运行时返回Pid
      * check if the server is running
      * @return bool
      */
@@ -387,7 +388,10 @@ class Server
 
         $pids = file_get_contents($this->pidFile);
         [$masterPid, $managerPid] = explode(',', $pids);
-        return $masterPid > 1 && Process::kill($masterPid, 0);//$signo=0，可以检测进程是否存在，不会发送信号
+        $exists = $masterPid > 1 && Process::kill($masterPid, 0);//$signo=0，可以检测进程是否存在，不会发送信号
+        !$exists && @unlink($this->pidFile);
+
+        return $exists ? $masterPid : false;
     }
 
     /**
@@ -488,20 +492,12 @@ class Server
         $this->swooleServer->start();
     }
 
-    public function restart()
-    {
-        if (!$this->isRunning()) {
-            //@todo 输出 server 未运行
-        }
-        //@todo 重启server
-    }
-
     /**
      * reload
      * @param bool $onlyTaskWorker
      * @return bool
      */
-    public function reReload(bool $onlyTaskWorker = false): bool
+    public function reload(bool $onlyTaskWorker = false): bool
     {
         if (!$this->isRunning()) {
             //未运行
@@ -764,7 +760,7 @@ class Server
         return [
             'daemonize' => 0,
             'worker_num' => swoole_cpu_num(),
-            'task_worker_num' => 1,
+            'task_worker_num' => swoole_cpu_num(),
             'log_file' => $this->logFile
         ];
     }

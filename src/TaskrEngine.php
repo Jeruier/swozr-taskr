@@ -13,7 +13,7 @@ use Swozr\Taskr\Server\Base\ExceptionManager;
 use Swozr\Taskr\Server\Base\ListenerRegister;
 use Swozr\Taskr\Server\Crontab\CrontabRegister;
 
-class Taskr
+class TaskrEngine
 {
     /**
      * Default host address
@@ -124,6 +124,18 @@ class Taskr
      */
     public function __construct(array $config = [])
     {
+        // Check runtime env
+        Swozr::checkRuntime();
+
+        // Init Taskr
+        $this->init($config);
+    }
+
+    /**
+     * @param array $config
+     */
+    private function init(array $config = [])
+    {
         if ($config) {
             foreach ($config as $key => $val) {
                 if (!property_exists($this, $key)) continue;
@@ -179,9 +191,51 @@ class Taskr
      * @throws Exception\ServerException
      * @throws \ReflectionException
      */
-    public function run()
+    public function start()
     {
         $this->beforeRun();
         $this->server->start();
+    }
+
+    /**
+     * stop server
+     */
+    public function stop()
+    {
+        $this->server->stop();
+    }
+
+    /**
+     * reload server 热重启
+     * @param bool $onlyTaskWorker 是否只重启work进程
+     */
+    public function reload(bool $onlyTaskWorker = false)
+    {
+        $this->server->reload($onlyTaskWorker);
+    }
+
+    /**
+     * 重启服务
+     * @throws Exception\ServerException
+     * @throws \ReflectionException
+     */
+    public function restart()
+    {
+        $this->stop();
+        sleep(1);
+        $this->start();
+    }
+
+    /**
+     * server status
+     */
+    public function status()
+    {
+        if ($pid = $this->server->isRunning()) {
+            //running
+            die("服务正运行中... pid:{$pid}" . PHP_EOL);
+        }
+
+        die("服务未启动" . PHP_EOL);
     }
 }

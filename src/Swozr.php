@@ -12,6 +12,7 @@ namespace Swozr\Taskr\Server;
 use Swozr\Taskr\Server\Base\Event;
 use Swozr\Taskr\Server\Base\EventManager;
 use Swozr\Taskr\Server\Contract\EventInterface;
+use Swozr\Taskr\Server\Exception\RuntimeException;
 
 class Swozr
 {
@@ -120,5 +121,25 @@ class Swozr
         $msg = self::makeLogPrefix($event->getParams(), 'data');
         $msg .= $event->getMessage();
         Swozr::server()->log($msg, $event->getData(), $event->getName());
+    }
+
+    /**
+     * 校验运行环境
+     * @param string $minPhp
+     * @param string $minSwoole
+     * @throws RuntimeException
+     */
+    public static function checkRuntime(string $minPhp = '7.1', string $minSwoole = '4.4.1'){
+        if (version_compare(PHP_VERSION, $minPhp, '<')) {
+            throw new RuntimeException('Run the server requires PHP version > ' . $minPhp . '! current is ' . PHP_VERSION);
+        }
+
+        if (!extension_loaded('swoole')) {
+            throw new RuntimeException("Run the server, extension 'swoole' is required!");
+        }
+
+        if (version_compare(SWOOLE_VERSION, $minSwoole, '<')) {
+            throw new RuntimeException('Run the server requires swoole version > ' . $minSwoole . '! current is ' . SWOOLE_VERSION);
+        }
     }
 }
