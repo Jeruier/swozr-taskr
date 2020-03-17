@@ -60,18 +60,28 @@ class TaskrClient
      */
     private $client;
 
-    private function __construct()
+    /**
+     * TaskrClient constructor.
+     * @param array $config = ['host' => '', 'port' => '', timeout => ''];
+     */
+    private function __construct(array $config = [])
     {
+        foreach ($config as $param => $value) {
+            $acion = 'set' . ucfirst($param);
+            if (method_exists($this, $acion)) {
+                $this->$acion($value);
+            }
+        }
         $this->client = $this->isCoroutineMode ? new CoClient() : new Client(SWOOLE_SOCK_TCP);
     }
 
     /**
      * @return null|TaskrClient
      */
-    public static function getInstance()
+    public static function getInstance(array $config = [])
     {
         if (null == self::$instance) {
-            self::$instance = new self();
+            self::$instance = new self($config);
         }
         return self::$instance;
     }
@@ -147,7 +157,8 @@ class TaskrClient
     /**
      * 设置协程模式
      */
-    public function setCoroutineMode(){
+    public function setCoroutineMode()
+    {
         $this->isCoroutineMode = true;
     }
 

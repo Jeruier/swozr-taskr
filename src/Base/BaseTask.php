@@ -99,6 +99,15 @@ abstract class BaseTask
     }
 
     /**
+     *  get task sign
+     * @return string
+     */
+    public function getTaskSign():string
+    {
+        return $this->taskSign;
+    }
+
+    /**
      * get task id
      * @return int
      */
@@ -128,7 +137,7 @@ abstract class BaseTask
     /**
      * @return mixed
      */
-    public function getData()
+    final public function getData()
     {
         return $this->data;
     }
