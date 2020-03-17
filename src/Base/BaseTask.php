@@ -258,19 +258,19 @@ abstract class BaseTask
 
     /**
      *任务已投递
-     * @return bool
+     * @return mixed
      */
     abstract public function pushed();
 
     /**
      * 消费任务
-     * @return bool
+     * @return mixed
      */
     abstract public function consume(): string;
 
     /**
      * 标记任务完成
-     * @return bool
+     * @return mixed
      */
     abstract public function finished();
 }

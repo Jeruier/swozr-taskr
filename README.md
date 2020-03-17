@@ -220,7 +220,7 @@ class TaskTest extends BaseTask
 
     /**
      *任务已投递
-     * @return bool
+     * @return mixed
      */
     public function pushed()
     {
@@ -229,7 +229,7 @@ class TaskTest extends BaseTask
 
     /**
      * 消费任务
-     * @return bool
+     * @return mixed
      */
     public function consume(): string
     {
@@ -238,7 +238,7 @@ class TaskTest extends BaseTask
 
     /**
      * 任务完成
-     * @return bool
+     * @return mixed
      */
     public function finished()
     {
