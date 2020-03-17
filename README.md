@@ -45,7 +45,7 @@ composer require jeruier/swozr-taskr
         'host' => '0.0.0.0',
         'port' => 9501,
         'setting' => [
-            'task_worker_num'       => 12,
+            'task_worker_num' => 12,
             ...
         ],
         'on' => [
@@ -70,7 +70,7 @@ composer require jeruier/swozr-taskr
         'host' => '0.0.0.0',
         'port' => 9501,
         'setting' => [
-             'task_worker_num'       => 12,
+             'task_worker_num' => 12,
             ...
         ],
         'on' => [
@@ -170,7 +170,7 @@ composer require jeruier/swozr-taskr
 
 ### <a name="crontabs">crontabs配置</a>
 >项目有定时业务需求的时候定义crontabs数组，crontabs数组为键为任务格式值为继承[BaseTask](https://github.com/Jeruier/swozr-taskr/blob/master/src/Base/BaseTask.php)的类,必须定义静态变量$cron( Crontab 表达式，支持到秒)
-#### Cron格式说明
+Cron格式说明
 ```php
 *    *    *    *    *    *
 -    -    -    -    -    -
@@ -190,7 +190,7 @@ composer require jeruier/swozr-taskr
 - 10-20 * * * * * 表示每分钟的第10-20秒执行一次。
 - 10,20,30 * * * * * 表示每分钟的第10,20,30秒各执行一次。
 
-####配置定时任务
+配置定时任务
 ```php
     'crontabs' => [
         CrontabTaskHandle::class,
@@ -274,7 +274,7 @@ class TaskTest extends BaseTask
 - consume() 任务消费逻辑处理
 - finished() 任务消费完成触发
 
-##任务投递
+## 任务投递
 >`TaskTest`为声明的任务类，默认投递地址0.0.0.0，端口9501
 
 TaskTest::publish(array $data, ...$varParams)
@@ -314,7 +314,7 @@ Taskr Client 发布任务的客户端
         'timeout' => 1
      ]);
 ```
-方式二
+- 方式二
 
 ```php
     $taskrClientObj = TaskrClient::getInstance();
