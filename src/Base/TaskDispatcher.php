@@ -11,6 +11,7 @@ namespace Swozr\Taskr\Server\Base;
 
 use Swozr\Taskr\Server\Event\ServerEvent;
 use Swozr\Taskr\Server\Exception\TaskException;
+use Swozr\Taskr\Server\Helper\Packet;
 use Swozr\Taskr\Server\Swozr;
 
 class TaskDispatcher
@@ -25,9 +26,9 @@ class TaskDispatcher
     {
         try {
             $result = $this->handle($class, $data, $attributes);
-            $response = BaseTask::packResponse($result);
+            $response = Packet::packResponse($result);
         } catch (\Exception $e) {
-            $response = BaseTask::packResponse(null, $e->getCode(), $e->getMessage());
+            $response = Packet::packResponse(null, $e->getCode(), $e->getMessage());
         }
 
         return $response;

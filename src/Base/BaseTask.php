@@ -11,7 +11,7 @@ namespace Swozr\Taskr\Server\Base;
 
 use Swozr\Taskr\Server\Event\ServerEvent;
 use Swozr\Taskr\Server\Exception\TaskException;
-use Swozr\Taskr\Server\Helper\JsonHelper;
+use Swozr\Taskr\Server\Helper\Packet;
 use Swozr\Taskr\Server\Swozr;
 use Swozr\Taskr\Server\Tools\TaskrClient;
 
@@ -137,7 +137,7 @@ abstract class BaseTask
      * @param string $msg
      * @throws TaskException
      */
-    public static function Error(string $msg)
+    final public static function Error(string $msg)
     {
         throw new TaskException($msg);
     }
@@ -149,7 +149,7 @@ abstract class BaseTask
      * @throws TaskException
      * @throws \Swozr\Taskr\Server\Exception\ClientException
      */
-    public static function publish(array $data, ...$varParams)
+    final public static function publish(array $data, ...$varParams)
     {
         if (count($varParams) > 2) {
             self::Error('Up to three parameters passed in');
@@ -173,7 +173,7 @@ abstract class BaseTask
         }
 
         $class = get_called_class();
-        $str = self::packClinet($class, $data, $taskType, $delay);
+        $str = Packet::packClinet($class, $data, $taskType, $delay);
         $taskrClientObj->send($str);
 
         return true;
@@ -189,7 +189,7 @@ abstract class BaseTask
      * @return mixed
      * @throws TaskException
      */
-    public static function push(
+    final public static function push(
         string $class,
         array $data = [],
         string $taskType = self::TYPE_ASYNC,
@@ -209,7 +209,7 @@ abstract class BaseTask
                 'delay' => $delay,
                 'data' => $data
             ];
-            $str = self::pack($class, $data, $attributes);
+            $str = Packet::pack($class, $data, $attributes);
 
             if (self::TYPE_DELAY == $taskType && !DelayExpression::parse($delay)) {
                 //延迟任务延迟发布
@@ -264,117 +264,4 @@ abstract class BaseTask
      * @return bool
      */
     abstract public function finished();
-
-    /**
-     * server层打包数据
-     * @param string $class
-     * @param array $data
-     * @param array $attributes
-     * @return string
-     */
-    public static function pack(string $class, array $data = [], array $attributes = [])
-    {
-        $data = [
-            'class' => $class,
-            'data' => $data,
-            'attributes' => $attributes,
-        ];
-
-        return JsonHelper::encode($data, JSON_UNESCAPED_UNICODE);
-    }
-
-    /**
-     * 打包client发送给server的数据
-     * @param string $class
-     * @param array $data
-     * @param string $taskType
-     * @param int $delay
-     * @return string
-     */
-    private static function packClinet(string $class, array $data = [], string $taskType = BaseTask::TYPE_ASYNC, int $delay = 0)
-    {
-        $data = [
-            'class' => $class,
-            'data' => $data,
-            'taskType' => $taskType,
-            'delay' => $delay,
-        ];
-
-        return JsonHelper::encode($data, JSON_UNESCAPED_UNICODE);
-    }
-
-
-    /**
-     * 解server层打包的数据
-     * @param string $str
-     * @return array
-     * @throws TaskException
-     */
-    public static function unpack(string $str)
-    {
-        $strdata = JsonHelper::decode($str, true);
-
-        $class = $strdata['class'] ?? '';
-        $data = $strdata['data'] ?? [];
-        $attributes = $strdata['attributes'] ?? [];
-
-        return [$class, $data, $attributes];
-    }
-
-    /**
-     * server端解client端发送过来的数据
-     * @param string $str
-     * @return array
-     */
-    public static function unpackClient(string $str)
-    {
-        $strdata = JsonHelper::decode($str, true);
-
-        $class = $strdata['class'] ?? '';
-        $data = $strdata['data'] ?? [];
-        $taskType = $strdata['taskType'] ?? BaseTask::TYPE_ASYNC;
-        $delay = $strdata['delay'] ?? 0;
-
-        return [$class, $data, $taskType, $delay];
-    }
-
-    /**
-     * 打包task return 内容
-     * @param $result
-     * @param int|null $errorCode
-     * @param string $errorMessage
-     * @return string
-     */
-    public static function packResponse($result, int $errorCode = null, string $errorMessage = '')
-    {
-        if ($errorCode !== null) {
-            $data = [
-                'code' => $errorCode,
-                'message' => $errorMessage
-            ];
-        } else {
-            $data['result'] = $result;
-        }
-
-        return JsonHelper::encode($data, JSON_UNESCAPED_UNICODE);
-    }
-
-    /**
-     * 解包task return 内容
-     * @param string $str
-     * @return array
-     */
-    public static function unpackResponse(string $str)
-    {
-        $data = JsonHelper::decode($str, true);
-
-        if (array_key_exists('result', $data)) {
-            return [$data['result'], null, ''];
-        }
-
-        $errorCode = $data['code'] ?? 0;
-        $errorMessage = $data['message'] ?? '';
-
-        return [null, $errorCode, $errorMessage];
-    }
 }

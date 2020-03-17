@@ -20,6 +20,7 @@ use Swozr\Taskr\Server\Base\TaskDispatcher;
 use Swozr\Taskr\Server\Event\ServerEvent;
 use Swozr\Taskr\Server\Event\SwooleEvent;
 use Swozr\Taskr\Server\Exception\ServerException;
+use Swozr\Taskr\Server\Helper\Packet;
 
 class Server
 {
@@ -661,7 +662,7 @@ class Server
         try {
             Swozr::trigger(SwooleEvent::RECEIVE, $serv, compact('fd', 'reactorId', 'data'));
 
-            [$class, $data, $taskType, $delay] = BaseTask::unpackClient($data);
+            [$class, $data, $taskType, $delay] = Packet::unpackClient($data);
 
             //投递
             if (BaseTask::TYPE_DELAY == $taskType) {
@@ -699,7 +700,7 @@ class Server
         try {
             Swozr::trigger(SwooleEvent::TASK, $serv, compact('taskId', 'srcWorkerId', 'data'));
 
-            [$class, $data, $attributes] = BaseTask::unpack($data);
+            [$class, $data, $attributes] = Packet::unpack($data);
             $attributes['taskId'] = $taskId;
             $attributes['srcWorkerId'] = $srcWorkerId;
 
