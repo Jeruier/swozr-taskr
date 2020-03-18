@@ -184,11 +184,11 @@ Cron格式说明
 ```
 示例：
 - `* * * * * *` 表示每秒执行一次。
-- 0 * * * * * 表示每分钟的第0秒执行一次，即每分钟执行一次。
-- 0 0 * * * * 表示每小时的0分0秒执行一次，即每小时执行一次。
-- 0/10 * * * * * 表示每分钟的第0秒开始每10秒执行一次。
-- 10-20 * * * * * 表示每分钟的第10-20秒执行一次。
-- 10,20,30 * * * * * 表示每分钟的第10,20,30秒各执行一次。
+- `0 * * * * *` 表示每分钟的第0秒执行一次，即每分钟执行一次。
+- `0 0 * * * *` 表示每小时的0分0秒执行一次，即每小时执行一次。
+- `0/10 * * * * *` 表示每分钟的第0秒开始每10秒执行一次。
+- `10-20 * * * * *` 表示每分钟的第10-20秒执行一次。
+- `10,20,30 * * * * *` 表示每分钟的第10,20,30秒各执行一次。
 
 配置定时任务
 ```php
@@ -253,26 +253,26 @@ class TaskTest extends BaseTask
 ```
 
 可调用的类方法
-- getData() 获取投递的数据
-- getTaskType() 获取投递任务类型 
-    - BaseTask::TYPE_ASYNC 异步任务（默认投递类型）
-    - BaseTask::TYPE_DELAY 延迟任务
-    - BaseTask::TYPE_CRONTAB 定时任务
-- getDelay() 获取延迟时间（当投递类型为延迟任务时）
-- getTaskId() 获取投递任务成功swoole返回的task_id
-- getTaskSign() 任务服务的标识，和taskid合成唯一任务
-- getTaskName() 获取任务名称
+- `getData()` 获取投递的数据
+- `getTaskType()` 获取投递任务类型 
+    - `BaseTask::TYPE_ASYNC` 异步任务（默认投递类型）
+    - `BaseTask::TYPE_DELAY` 延迟任务
+    - `BaseTask::TYPE_CRONTAB` 定时任务
+- `getDelay()` 获取延迟时间（当投递类型为延迟任务时）
+- `getTaskId()` 获取投递任务成功swoole返回的task_id
+- `getTaskSign()` 任务服务的标识，和taskid合成唯一任务
+- `getTaskName()` 获取任务名称
 
 
 需要实现的方法
-- setTaskName() 可设置自定义任务名称，（非必须）默认值`类ShortName`
-- pushFailure(array $data, int $delay, string $failMsg)  服务投递过程投递失败时触发
-    - $data 投递的数据
-    - $delay 延迟时间
-    - $failMsg 投递失败原因
-- pushed() 任务投递成功时触发
-- consume() 任务消费逻辑处理
-- finished() 任务消费完成触发
+- `setTaskName()` 可设置自定义任务名称，（非必须）默认值`类ShortName`
+- `pushFailure(array $data, int $delay, string $failMsg)`  服务投递过程投递失败时触发
+    - `$data` 投递的数据
+    - `$delay` 延迟时间
+    - `$failMsg` 投递失败原因
+- `pushed()` 任务投递成功时触发
+- `consume()` 任务消费逻辑处理
+- `finished()` 任务消费完成触发
 
 ## 任务投递
 >`TaskTest`为声明的任务类，默认投递地址0.0.0.0，端口9501
@@ -297,10 +297,10 @@ TaskTest::publish(array $data, ...$varParams)
      TaskTest::publish($data, $taskrClientObj, 5000);  //延迟任务
 ```
 
-- $data 需要投递的数据
-- $varParams 为可选参数
-    - int $delay 如需投递延迟任务时传入
-    - [TaskrClient](https://github.com/Jeruier/swozr-taskr/blob/master/src/Tools/TaskrClient.php) $taskrClientObj 
+- `$data` 需要投递的数据
+- `$varParams` 为可选参数
+    - `int $delay` 如需投递延迟任务时传入
+    - [TaskrClient](https://github.com/Jeruier/swozr-taskr/blob/master/src/Tools/TaskrClient.php) `$taskrClientObj` 
     如需自定义投递地址及端口需定义发送客户端（地址端口与Taskr配置的服务地址端口需相同）
 
 Taskr Client 发布任务的客户端
