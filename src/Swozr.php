@@ -118,7 +118,7 @@ class Swozr
      */
     public static function makeEventLog(EventInterface $event)
     {
-        $msg = self::makeLogPrefix($event->getParams(), 'data');
+        $msg = self::makeLogPrefix($event->getParams());
         $msg .= $event->getMessage();
         Swozr::server()->log($msg, $event->getData(), $event->getName());
     }

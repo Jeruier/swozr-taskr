@@ -9,19 +9,23 @@
 namespace Swozr\Taskr\Server\Base;
 
 
+use Swozr\Taskr\Server\Contract\TaskConsume;
+use Swozr\Taskr\Server\Contract\TaskNotice;
 use Swozr\Taskr\Server\Event\ServerEvent;
 use Swozr\Taskr\Server\Exception\TaskException;
 use Swozr\Taskr\Server\Helper\Packet;
 use Swozr\Taskr\Server\Swozr;
 use Swozr\Taskr\Server\Tools\TaskrClient;
 
-abstract class BaseTask
+class BaseTask
 {
     const TYPE_ASYNC = 'async'; //正常异步任务
 
     const TYPE_DELAY = 'delay'; //延时任务
 
     const TYPE_CRONTAB = 'corntab'; //定时任务
+
+    const TYPE_RABBMIT_MQ = 'rabbmit_mq'; //定时任务
 
     /**
      * @var int
@@ -63,7 +67,7 @@ abstract class BaseTask
      * task data
      * @var mixed
      */
-    public $data;
+    private $data;
 
     /**
      * 定时任务规则
@@ -102,7 +106,7 @@ abstract class BaseTask
      *  get task sign
      * @return string
      */
-    public function getTaskSign():string
+    public function getTaskSign(): string
     {
         return $this->taskSign;
     }
@@ -132,6 +136,14 @@ abstract class BaseTask
     public function getDelay(): int
     {
         return $this->delay;
+    }
+
+    /**
+     * set data
+     * @param $data
+     */
+    public function setData($data){
+        $this->data = $data;
     }
 
     /**
@@ -182,6 +194,13 @@ abstract class BaseTask
         }
 
         $class = get_called_class();
+
+        //校验子类是实现指定接口
+        $subReflection = new \ReflectionClass($class);
+        if (!$subReflection->implementsInterface(TaskNotice::class) || !$subReflection->implementsInterface(TaskConsume::class)) {
+            self::Error(sprintf("(class = %s) must implement interface %s,%s", $class, TaskNotice::class, TaskConsume::class));
+        }
+
         $str = Packet::packClinet($class, $data, $taskType, $delay);
         $taskrClientObj->send($str);
 
@@ -194,7 +213,6 @@ abstract class BaseTask
      * @param string $taskType
      * @param int $delay
      * @param int $dstWorkerId
-     * @param callable|null $fallback
      * @return mixed
      * @throws TaskException
      */
@@ -208,9 +226,15 @@ abstract class BaseTask
     )
     {
         try {
-            if (!in_array($taskType, [self::TYPE_ASYNC, self::TYPE_DELAY, self::TYPE_CRONTAB])) {
+            if (!in_array($taskType,
+                [
+                    self::TYPE_ASYNC,
+                    self::TYPE_DELAY,
+                    self::TYPE_CRONTAB,
+                    self::TYPE_RABBMIT_MQ
+                ])) {
                 //只能发布异步或延迟任务
-                self::Error(sprintf("Task error : tasktype is %s or %s or %s (tasktype = %s)", self::TYPE_ASYNC, self::TYPE_DELAY, self::TYPE_CRONTAB, $taskType));
+                self::Error(sprintf("Task error : tasktype is %s or %s or %s or %s (tasktype = %s)", self::TYPE_ASYNC, self::TYPE_DELAY, self::TYPE_CRONTAB, self::TYPE_RABBMIT_MQ, $taskType));
             }
 
             $attributes = [
@@ -239,38 +263,11 @@ abstract class BaseTask
                     'delay' => $delay
                 ],
             ]));
-            /* @var BaseTask $class */
+            /* @var TaskNotice $class */
             $class::pushFailure($data, $delay, $msg); //任务投递失败
             self::Error($msg);
         }
 
         return $taskId;
     }
-
-    /**
-     * 任务投递失败
-     * @param array $data 投递的数据
-     * @param int $delay 延迟执行毫秒数
-     * @param string $failMsg 任务发布失败原因
-     * @return mixed
-     */
-    abstract public static function pushFailure(array $data, int $delay, string $failMsg);
-
-    /**
-     *任务已投递
-     * @return mixed
-     */
-    abstract public function pushed();
-
-    /**
-     * 消费任务
-     * @return mixed
-     */
-    abstract public function consume(): string;
-
-    /**
-     * 标记任务完成
-     * @return mixed
-     */
-    abstract public function finished();
 }

@@ -12,6 +12,8 @@ namespace Swozr\Taskr\Server;
 use Swozr\Taskr\Server\Base\ExceptionManager;
 use Swozr\Taskr\Server\Base\ListenerRegister;
 use Swozr\Taskr\Server\Crontab\CrontabRegister;
+use Swozr\Taskr\Server\Exception\RuntimeException;
+use Swozr\Taskr\Server\RabbmitMq\MqRegister;
 
 class TaskrEngine
 {
@@ -106,10 +108,22 @@ class TaskrEngine
     public $debug = false;
 
     /**
+     * rabbmit需要开启的进程数
+     * @var int
+     */
+    public $MQProcessMum = 1;
+
+    /**
      * 注册定时任务
      * @var array
      */
     public $crontabs = [];
+
+    /**
+     * 注册rabbmitMq 任务
+     * @var array
+     */
+    public $rabbmitMqs = [];
 
     /**
      * swoole server
@@ -182,6 +196,24 @@ class TaskrEngine
         if ($this->crontabs) {
             foreach ($this->crontabs as $cron => $className) {
                 is_int($cron) ? CrontabRegister::register($className) : CrontabRegister::registerCron($cron, $className);
+            }
+        }
+
+        //注册rabbmitMq任务
+        if ($this->rabbmitMqs) {
+            if (!extension_loaded('amqp')){
+                throw new RuntimeException("loading rabbmitMq task, extension 'amqp' is required!");
+            }
+            MqRegister::$processNum = $this->MQProcessMum; //设置Mq执行进程数
+
+            if(count($this->rabbmitMqs) == count($this->rabbmitMqs,1)){
+                //以一维数组的形式配置了一项，
+                MqRegister::register($this->rabbmitMqs);
+            }else{
+                //已多维数组的形式配置
+                foreach ($this->rabbmitMqs as $config) {
+                    MqRegister::register($config);
+                }
             }
         }
     }

@@ -9,9 +9,9 @@
 namespace Swozr\Taskr\Server\Crontab;
 
 
-use Swozr\Taskr\Server\Contract\TimerParse;
+use Swozr\Taskr\Server\Contract\Parse;
 
-class CrontabExpression implements TimerParse
+class CrontabExpression implements Parse
 {
     /**
      * @param $crontab

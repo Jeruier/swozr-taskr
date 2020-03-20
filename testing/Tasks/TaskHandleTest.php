@@ -10,8 +10,10 @@ namespace SwozrTest\Taskr\Server\Tasks;
 
 
 use Swozr\Taskr\Server\Base\BaseTask;
+use Swozr\Taskr\Server\Contract\TaskConsume;
+use Swozr\Taskr\Server\Contract\TaskNotice;
 
-class TaskHandleTest extends BaseTask
+class TaskHandleTest extends BaseTask implements TaskNotice,TaskConsume
 {
     public static $cron = '0/3 * * * * *';
 
@@ -29,6 +31,7 @@ class TaskHandleTest extends BaseTask
 
     public function consume(): string
     {
+        var_dump($this->getData());
         // TODO: Implement consume() method.
         return __METHOD__ . PHP_EOL;
     }

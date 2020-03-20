@@ -9,9 +9,10 @@
 namespace Swozr\Taskr\Server\Crontab;
 
 
+use Swozr\Taskr\Server\Base\SpecialTaskRegister;
 use Swozr\Taskr\Server\Exception\CrontabException;
 
-class CrontabRegister
+class CrontabRegister extends SpecialTaskRegister
 {
     /**
      * [
@@ -35,6 +36,8 @@ class CrontabRegister
             );
         }
 
+        self::checkClass($className);
+
         self::$crontabs[$cron] = $className;
     }
 
@@ -53,7 +56,7 @@ class CrontabRegister
      * $crontabs
      * @return array
      */
-    public static function getCrontabs()
+    public static function getRegisters(): array
     {
         return self::$crontabs;
     }

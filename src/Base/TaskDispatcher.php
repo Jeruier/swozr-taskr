@@ -9,6 +9,7 @@
 namespace Swozr\Taskr\Server\Base;
 
 
+use Swozr\Taskr\Server\Contract\TaskNotice;
 use Swozr\Taskr\Server\Event\ServerEvent;
 use Swozr\Taskr\Server\Exception\TaskException;
 use Swozr\Taskr\Server\Helper\Packet;
@@ -24,14 +25,8 @@ class TaskDispatcher
      */
     public function dispatch(string $class, array $data = [], array $attributes = [])
     {
-        try {
             $result = $this->handle($class, $data, $attributes);
-            $response = Packet::packResponse($result);
-        } catch (\Exception $e) {
-            $response = Packet::packResponse(null, $e->getCode(), $e->getMessage());
-        }
-
-        return $response;
+            return Packet::packResponse($result);
     }
 
     /**
@@ -44,29 +39,49 @@ class TaskDispatcher
      */
     private function handle(string $class, array $data, array $attributes)
     {
-        /**@var BaseTask $taskObject **/
-        $taskObject = new $class();
-        if (!($taskObject instanceof BaseTask)) {
-            throw new TaskException(sprintf("class %s must be instanceof %s", $class, BaseTask::class));
-        }
+        /**@var BaseTask|\Swozr\Taskr\Server\Contract\TaskConsume|TaskNotice $taskObj * */
+        $taskObj = new $class();
 
         //初始化属性值 $taskType、$taskId、$srcWorkerId
         foreach ($attributes as $attribute => $val) {
-            $taskObject->$attribute = $val;
+            $taskObj->$attribute = $val;
+        }
+        $taskObj->setData($data);
+
+        /**@var \Swozr\Taskr\Server\Contract\SpecialTask $runClassName**/
+        [, $runClass] = TaskBuilder::SPECIAL_TASKS_DEPLOY[$taskObj->getTaskType()] ?? [null, null];
+        if ($runClass){
+            //定制任务handle
+            return $runClass::handle($taskObj);
         }
 
-        //task pushed event
-        Swozr::trigger(new Event(ServerEvent::TASK_PUSHED));
-        $taskObject->pushed();   //触发任务已投递
+        if ($taskObj instanceof TaskNotice){
+            //task pushed event
+            Swozr::trigger(new Event(ServerEvent::TASK_PUSHED));
+            $taskObj->pushed();   //触发任务已投递（通知）
+        }
 
-        //task consume event
-        Swozr::trigger(new Event(ServerEvent::TASK_CONSUME), [
-            Event::DATA => $data
-        ]);
-        $result = $taskObject->consume();
+        //trigger consume event
+        self::triggerConsumeEvent($taskObj);
 
-        $taskObject->finished();  //任务消费完成
+        $result = $taskObj->consume();
+
+        if ($taskObj instanceof TaskNotice){
+            $taskObj->finished();  //通知任务消费完成
+        }
 
         return $result;
+    }
+
+    /**
+     * 触发任务消费事件
+     * @param BaseTask $taskObj
+     */
+    public static function triggerConsumeEvent(BaseTask $taskObj){
+        //task consume event
+        Swozr::trigger(new Event(ServerEvent::TASK_CONSUME), null,[
+            Event::MESSAGE => "begin consume {$taskObj->getTaskType()} task...",
+            Event::DATA => $taskObj->getData()
+        ]);
     }
 }

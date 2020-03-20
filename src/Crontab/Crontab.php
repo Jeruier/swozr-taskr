@@ -11,8 +11,11 @@ namespace Swozr\Taskr\Server\Crontab;
 
 use Swoole\Timer;
 use Swozr\Taskr\Server\Base\BaseTask;
+use Swozr\Taskr\Server\Base\TaskDispatcher;
+use Swozr\Taskr\Server\Contract\SpecialTask;
+use Swozr\Taskr\Server\Swozr;
 
-class Crontab
+class Crontab implements SpecialTask
 {
     /**
      * run Crontab
@@ -25,8 +28,24 @@ class Crontab
 
             // Push task
             foreach ($tasks as $className) {
-                BaseTask::push($className, [], BaseTask::TYPE_CRONTAB);
+                try{
+                    BaseTask::push($className, [], BaseTask::TYPE_CRONTAB);
+                }catch (\Exception $e){
+                    Swozr::server()->execptionManager->handler($e);
+                }
             }
         });
+    }
+
+    /**
+     * @param BaseTask|\Swozr\Taskr\Server\Contract\TaskConsume $taskObj
+     * @return mixed
+     */
+    public static function handle(BaseTask $taskObj)
+    {
+        //trigger consume event
+        TaskDispatcher::triggerConsumeEvent($taskObj);
+
+        return $taskObj->consume();
     }
 }

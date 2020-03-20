@@ -21,6 +21,7 @@ use Swozr\Taskr\Server\Event\ServerEvent;
 use Swozr\Taskr\Server\Event\SwooleEvent;
 use Swozr\Taskr\Server\Exception\ServerException;
 use Swozr\Taskr\Server\Helper\Packet;
+use Swozr\Taskr\Server\RabbmitMq\MqRegister;
 
 class Server
 {
@@ -156,15 +157,14 @@ class Server
         $this->sign = uniqid();
         $this->execptionManager = new ExceptionManager();  //异常处理管理
 
-        //监听者注册
-        ListenerRegister::register(EventManager::getInstance());
     }
 
     /**
      * 配置异常处理管理器
      * @param ExceptionManager $em
      */
-    public function setExecptionManager(ExceptionManager $em){
+    public function setExecptionManager(ExceptionManager $em)
+    {
         $this->execptionManager = $em;
     }
 
@@ -440,11 +440,24 @@ class Server
     }
 
     /**
+     * before start
+     * @throws Exception\RegisterEventException
+     * @throws \ReflectionException
+     */
+    private function beforeStart()
+    {
+        //监听者注册
+        ListenerRegister::register(EventManager::getInstance());
+    }
+
+    /**
      * 开启服务
      * @throws ServerException
      */
     public function start()
     {
+        $this->beforeStart();
+
         $this->swooleServer = new SwooleServer($this->host, $this->port, $this->mode, $this->type);
 
         //Before setiing
@@ -595,7 +608,7 @@ class Server
      */
     public function onWorkerStart(SwooleServer $serv, int $workerId)
     {
-        try{
+        try {
             //worker start event
             Swozr::trigger(SwooleEvent::WORKER_START, $serv, compact('workerId'));
 
@@ -608,7 +621,7 @@ class Server
 
             //分配work进程做任务
             TaskBuilder::assign($workerId);
-        }catch (\Exception $e){
+        } catch (\Exception $e) {
             $this->execptionManager->handler($e);
         }
     }

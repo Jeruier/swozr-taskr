@@ -9,9 +9,9 @@
 namespace Swozr\Taskr\Server\Base;
 
 
-use Swozr\Taskr\Server\Contract\TimerParse;
+use Swozr\Taskr\Server\Contract\Parse;
 
-class DelayExpression implements TimerParse
+class DelayExpression implements Parse
 {
     public static function parse($rule): bool
     {

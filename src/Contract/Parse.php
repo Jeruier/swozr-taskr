@@ -9,7 +9,7 @@
 namespace Swozr\Taskr\Server\Contract;
 
 
-interface TimerParse
+interface Parse
 {
     /**
      * @param $rule
