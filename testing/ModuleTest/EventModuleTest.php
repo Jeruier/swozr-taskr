@@ -14,7 +14,7 @@ use Swozr\Taskr\Server\Contract\EventHandlerInterface;
 use Swozr\Taskr\Server\Event\ServerEvent;
 use Swozr\Taskr\Server\Swozr;
 
-require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../../vendor/autoload.php';
 
 class EventModuleTest
 {

@@ -12,7 +12,7 @@ namespace SwozrTest\Taskr\Server\ModuleTest;
 use Swozr\Taskr\Server\Tools\TaskrClient;
 use SwozrTest\Taskr\Server\Tasks\TaskHandleTest;
 
-require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../../vendor/autoload.php';
 
 class PublishTaskTest
 {
