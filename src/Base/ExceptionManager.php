@@ -37,7 +37,7 @@ class ExceptionManager
         if (!$reflection->implementsInterface(ExceptionHandlerInterface::class)) {
             throw new \Exception(sprintf("(class = %s) must implement interface %s", $handlerClass, ExceptionHandlerInterface::class));
         }
-        $this->handlers[$exceptionClass] = $handlerClass;
+        $this->handlers[$exceptionClass] = new $handlerClass();
     }
 
     /**
@@ -53,13 +53,13 @@ class ExceptionManager
         $errHandlerClass = "{$errClass}Handler";
         $errHandlerClass = class_exists($errHandlerClass) ? $errHandlerClass : DefaultExceptionHandler::class;
         /** @var ExceptionHandlerInterface $errHandlerObj **/
-        $errHandlerObj = new $errHandlerClass();
+        $errHandlerObj = $this->handlers[$errHandlerClass] = !empty($this->handlers[$errHandlerClass]) ? $this->handlers[$errHandlerClass] : new $errHandlerClass();
         $errHandlerObj->handle($e);
 
         //执行自定义的异常处理
         if (isset($this->handlers[$errClass])){
             //设置自定义处理异常
-            $errHandlerObj = new $this->handlers[$errClass]();
+            $errHandlerObj = !empty($this->handlers[$errClass]) ? $this->handlers[$errClass] : new $this->handlers[$errClass]();
             $errHandlerObj->handle($e);
         }
         return true;

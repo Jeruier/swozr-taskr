@@ -22,6 +22,7 @@ use Swozr\Taskr\Server\Event\SwooleEvent;
 use Swozr\Taskr\Server\Exception\ServerException;
 use Swozr\Taskr\Server\Helper\Packet;
 use Swozr\Taskr\Server\RabbmitMq\MqRegister;
+use Swozr\Taskr\Server\Tools\OutputStyle\Output;
 
 class Server
 {
@@ -137,10 +138,16 @@ class Server
     public $execptionManager;
 
     /**
+     * 命令行样式化输出
+     * @var Output
+     */
+    public $output;
+
+    /**
      * 是否调试模式运行
      * @var bool
      */
-    public $debug = false;
+    public $debug = true;
 
     /**
      * Server constructor
@@ -156,7 +163,7 @@ class Server
         $this->setting = $this->defaultSetting();
         $this->sign = uniqid();
         $this->execptionManager = new ExceptionManager();  //异常处理管理
-
+        $this->output = new Output(); //样式console输出
     }
 
     /**
@@ -379,11 +386,11 @@ class Server
     /**
      * 运行时返回Pid
      * check if the server is running
-     * @return bool
+     * @return bool|int
      */
     public function isRunning(): bool
     {
-        if (file_exists($this->pidFile)) {
+        if (!file_exists($this->pidFile)) {
             return false;
         }
 
@@ -392,7 +399,22 @@ class Server
         $exists = $masterPid > 1 && Process::kill($masterPid, 0);//$signo=0，可以检测进程是否存在，不会发送信号
         !$exists && @unlink($this->pidFile);
 
-        return $exists ? $masterPid : false;
+        return $exists;
+    }
+
+    /**
+     * 根据pid文件获取pid信息
+     *
+     * @return array
+     */
+    public function getPidsFormFile():array
+    {
+        if (!file_exists($this->pidFile)) {
+            return [null, null];
+        }
+
+        $pids = file_get_contents($this->pidFile);
+        return explode(',', $pids);
     }
 
     /**
@@ -448,6 +470,11 @@ class Server
     {
         //监听者注册
         ListenerRegister::register(EventManager::getInstance());
+
+        //服务信息面板
+        Output::Panel($this->buildMainServerInfo(), 'Tasker Server Information', [
+            'titleStyle' => 'cyan',
+        ]);
     }
 
     /**
@@ -499,7 +526,6 @@ class Server
         Swozr::trigger(ServerEvent::BEFORE_START, $this);
 
         self::$server = $this;
-        Swozr::$server = $this;
 
         $this->taskDispatcher = new TaskDispatcher(); //任务调度器
 
@@ -794,6 +820,23 @@ class Server
             SwooleEvent::WORKER_STOP => [$this, 'onWorkerStop'],
             SwooleEvent::WORKER_ERROR => [$this, 'onWorkerError'],
             SwooleEvent::RECEIVE => [$this, 'onReceive'],
+        ];
+    }
+
+    /**
+     *
+     * @return array
+     */
+    protected function buildMainServerInfo(): array
+    {
+        return [
+            $this->pidName => [
+                'listen' => $this->host . ':' . $this->port,
+                'type' => $this->type,
+                'mode' => $this->mode,
+                'worker_num' => $this->setting['worker_num'],
+                'task_worker_num' => $this->setting['task_worker_num'],
+            ]
         ];
     }
 }

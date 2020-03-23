@@ -13,7 +13,13 @@ use Swozr\Taskr\Server\Base\ExceptionManager;
 use Swozr\Taskr\Server\Base\ListenerRegister;
 use Swozr\Taskr\Server\Crontab\CrontabRegister;
 use Swozr\Taskr\Server\Exception\RuntimeException;
+use Swozr\Taskr\Server\Processor\CrontabsProcessor;
+use Swozr\Taskr\Server\Processor\ExecptionManagerProcessor;
+use Swozr\Taskr\Server\Processor\ListenerProcessor;
+use Swozr\Taskr\Server\Processor\Processor;
+use Swozr\Taskr\Server\Processor\RabbmitMqsProcessor;
 use Swozr\Taskr\Server\RabbmitMq\MqRegister;
+use Swozr\Taskr\Server\Tools\OutputStyle\Console;
 
 class TaskrEngine
 {
@@ -158,6 +164,20 @@ class TaskrEngine
         }
 
         $this->server = new Server();
+        Swozr::$server = $this->server;
+    }
+
+    /**
+     * @return Processor[]
+     */
+    protected function processors(): array
+    {
+        return [
+            new ListenerProcessor($this),
+            new ExecptionManagerProcessor($this),
+            new CrontabsProcessor($this),
+            new RabbmitMqsProcessor($this),
+        ];
     }
 
     /**
@@ -178,43 +198,9 @@ class TaskrEngine
             }
         }
 
-        //添加监听者
-        foreach ($this->listener as $eventName => $definition) {
-            ListenerRegister::addListener($eventName, $definition);
-        }
-
-        //添加异常处理者
-        if ($this->exceptionHandler) {
-            $execptionManager = new ExceptionManager();
-            foreach ($this->exceptionHandler as $exceptionClass => $handlerClass) {
-                $execptionManager->addHandler($exceptionClass, $handlerClass);
-            }
-            $this->server->setExecptionManager($execptionManager);
-        }
-
-        //注册定时任务
-        if ($this->crontabs) {
-            foreach ($this->crontabs as $cron => $className) {
-                is_int($cron) ? CrontabRegister::register($className) : CrontabRegister::registerCron($cron, $className);
-            }
-        }
-
-        //注册rabbmitMq任务
-        if ($this->rabbmitMqs) {
-            if (!extension_loaded('amqp')){
-                throw new RuntimeException("loading rabbmitMq task, extension 'amqp' is required!");
-            }
-            MqRegister::$processNum = $this->MQProcessMum; //设置Mq执行进程数
-
-            if(count($this->rabbmitMqs) == count($this->rabbmitMqs,1)){
-                //以一维数组的形式配置了一项，
-                MqRegister::register($this->rabbmitMqs);
-            }else{
-                //已多维数组的形式配置
-                foreach ($this->rabbmitMqs as $config) {
-                    MqRegister::register($config);
-                }
-            }
+        //载入
+        foreach ($this->processors() as $processor){
+            $processor->handle();
         }
     }
 
@@ -265,9 +251,12 @@ class TaskrEngine
     {
         if ($pid = $this->server->isRunning()) {
             //running
-            die("服务正运行中... pid:{$pid}" . PHP_EOL);
+            [$masterPid, $managerPid] = $this->server->getPidsFormFile();
+            return Console::writef("<success>Taskr Server is Running...</success> (Master PID: <mga>%d</mga>, Manager PID: <mga>%d</mga>)",
+                $masterPid,
+                $managerPid);
         }
 
-        die("服务未启动" . PHP_EOL);
+        Console::writeln("<danger>Taskr Server is not Running</danger>" . PHP_EOL);
     }
 }

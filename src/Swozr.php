@@ -141,5 +141,18 @@ class Swozr
         if (version_compare(SWOOLE_VERSION, $minSwoole, '<')) {
             throw new RuntimeException('Run the server requires swoole version > ' . $minSwoole . '! current is ' . SWOOLE_VERSION);
         }
+
+        foreach ([
+                     'blackfire',
+                     'xdebug',
+                     'uopz',
+                     'xhprof',
+                     'zend',
+                     'trace',
+                 ] as $ext) {
+            if (extension_loaded($ext)) {
+                throw new RuntimeException("The extension of '{$ext}' must be closed, otherwise swoole will be affected!");
+            }
+        }
     }
 }
