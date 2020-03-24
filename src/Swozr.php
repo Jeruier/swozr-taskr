@@ -36,6 +36,19 @@ class Swozr
      */
     const LOG_LEVEL_ERROR = 'error';
 
+    /**
+     * error级别日志
+     */
+    const LOG_LEVEL_DEBUG = 'debug';
+
+    public static function init()
+    {
+        define('TASKR_ROOT_DIR', __DIR__ . '/'); //taskr 根目錄
+
+        define('TASKR_EXCEPTION_DIR', TASKR_ROOT_DIR . 'Exception/'); //异常文件目录
+
+        define('TASKR_EXCEPTION_HANDLER_DIR', TASKR_EXCEPTION_DIR . 'Handler/'); //异常处理文件目录
+    }
 
     /**
      * 触发事件
@@ -120,7 +133,7 @@ class Swozr
     {
         $msg = self::makeLogPrefix($event->getParams());
         $msg .= $event->getMessage();
-        Swozr::server()->log($msg, $event->getData(), $event->getName());
+        Swozr::server()->log($event->getName() . ':' . $msg, $event->getData());
     }
 
     /**
@@ -129,7 +142,8 @@ class Swozr
      * @param string $minSwoole
      * @throws RuntimeException
      */
-    public static function checkRuntime(string $minPhp = '7.1', string $minSwoole = '4.4.1'){
+    public static function checkRuntime(string $minPhp = '7.1', string $minSwoole = '4.4.1')
+    {
         if (version_compare(PHP_VERSION, $minPhp, '<')) {
             throw new RuntimeException('Run the server requires PHP version > ' . $minPhp . '! current is ' . PHP_VERSION);
         }

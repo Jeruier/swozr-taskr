@@ -12,6 +12,7 @@ namespace Swozr\Taskr\Server\Base;
 
 use Swozr\Taskr\Server\Contract\ExceptionHandlerInterface;
 use Swozr\Taskr\Server\Exception\Handler\DefaultExceptionHandler;
+use Swozr\Taskr\Server\Swozr;
 
 class ExceptionManager
 {
@@ -33,11 +34,11 @@ class ExceptionManager
      */
     public function addHandler(string $exceptionClass, string $handlerClass)
     {
-        $reflection = new \ReflectionClass($handlerClass);
-        if (!$reflection->implementsInterface(ExceptionHandlerInterface::class)) {
+        $obj = new $handlerClass();
+        if (!$obj instanceof ExceptionHandlerInterface){
             throw new \Exception(sprintf("(class = %s) must implement interface %s", $handlerClass, ExceptionHandlerInterface::class));
         }
-        $this->handlers[$exceptionClass] = new $handlerClass();
+        $this->handlers[$exceptionClass] = $obj;
     }
 
     /**

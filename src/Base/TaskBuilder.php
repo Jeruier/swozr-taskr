@@ -48,19 +48,21 @@ class TaskBuilder
         foreach (self::SPECIAL_TASKS_DEPLOY as $taskType => $arr) {
             [$registerClassName, $runClassName] = $arr;
 
+            //定时任务只使用workr进程(workid=0)开启，这样可以投递异步任务到task 进程
+            $minWorkId = BaseTask::TYPE_CRONTAB == $taskType ? 0 : Swozr::swooleServer()->setting['worker_num'] + 1;
+            $maxWorkId = $minWorkId + $registerClassName::$processNum;
+            //task process
             /**@var \Swozr\Taskr\Server\Base\SpecialTaskRegister $registerClassName * */
-            if ($registerClassName::getRegisters() && (!isset(self::$builder[$taskType]) || count(self::$builder[$taskType]) < $registerClassName::$processNum)) {
-                if (Swozr::$server->getWorkProcessRole($workId) == Server::ROLE_WORK_PROCESS_TASK && BaseTask::TYPE_CRONTAB == $taskType) {
-                    //task process
-                    //定时任务只使用workr进程开启，这样可以投递异步任务到task 进程
-                    return false;
+            if ($registerClassName::getRegisters() && $workId >= $minWorkId && $workId <= $maxWorkId) {
+                if (BaseTask::TYPE_CRONTAB == $taskType && Swozr::server()->getWorkProcessRole($workId) != Server::ROLE_WORK_PROCESS_WORKER){
+                    //corntab只能在worker进程使用
+                    continue;
                 }
-
                 //已配置该任务、根据$processNum启动该模式
+                self::$builder[$taskType][] = $workId;
+                Swozr::server()->log("Monitor {$taskType} task: workerId=$workId");
                 /**@var \Swozr\Taskr\Server\Contract\SpecialTask $runClassName * */
                 $runClassName::run();
-
-                return self::$builder[$taskType][] = $workId;
             }
         }
 

@@ -22,6 +22,7 @@ use Swozr\Taskr\Server\Event\SwooleEvent;
 use Swozr\Taskr\Server\Exception\ServerException;
 use Swozr\Taskr\Server\Helper\Packet;
 use Swozr\Taskr\Server\RabbmitMq\MqRegister;
+use Swozr\Taskr\Server\Tools\OutputStyle\Console;
 use Swozr\Taskr\Server\Tools\OutputStyle\Output;
 
 class Server
@@ -29,6 +30,27 @@ class Server
     const ROLE_WORK_PROCESS_WORKER = 'worker';  //Worker进程
 
     const ROLE_WORK_PROCESS_TASK = 'task';  //Task进程
+
+    // Swoole mode list
+    const MODE_LIST = [
+        SWOOLE_BASE    => 'Base',
+        SWOOLE_PROCESS => 'Process',
+    ];
+
+    // Swoole socket type list
+    const TYPE_LIST = [
+        // SWOOLE_SOCK_TCP | SWOOLE_SSL = 513
+        513                     => 'TCP & SSL',
+        // SWOOLE_SOCK_TCP6 | SWOOLE_SSL = 515
+        515                     => 'TCP6 & SSL',
+        // Normal
+        SWOOLE_SOCK_TCP         => 'TCP',
+        SWOOLE_SOCK_TCP6        => 'TCP6',
+        SWOOLE_SOCK_UDP         => 'UDP',
+        SWOOLE_SOCK_UDP6        => 'UDP6',
+        SWOOLE_SOCK_UNIX_DGRAM  => 'UNIX DGRAM',
+        SWOOLE_SOCK_UNIX_STREAM => 'UNIX STREAM',
+    ];
 
     /**
      * @var Server
@@ -227,6 +249,14 @@ class Server
     }
 
     /**
+     * @return string
+     */
+    public function getModeName(): string
+    {
+        return self::MODE_LIST[$this->mode] ?? 'Unknown';
+    }
+
+    /**
      * set mode
      * @param int $mode
      */
@@ -252,20 +282,18 @@ class Server
      */
     public function setType(int $type)
     {
-        if (!in_array($type, [
-            SWOOLE_SOCK_TCP,
-            SWOOLE_SSL,
-            SWOOLE_SOCK_TCP6,
-            SWOOLE_SOCK_TCP,
-            SWOOLE_SOCK_TCP6,
-            SWOOLE_SOCK_UDP,
-            SWOOLE_SOCK_UDP6,
-            SWOOLE_SOCK_UNIX_DGRAM,
-            SWOOLE_SOCK_UNIX_STREAM
-        ])) {
+        if (!isset(self::TYPE_LIST[$type])) {
             throw new \InvalidArgumentException('invalid server type value: ' . $type);
         }
         $this->type = $type;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTypeName(): string
+    {
+        return self::TYPE_LIST[$this->type] ?? 'Unknown';
     }
 
     /**
@@ -597,6 +625,8 @@ class Server
      */
     public function onShutdown(SwooleServer $serv)
     {
+        $this->log("Shutdown: pidFile={$this->pidFile}");
+
         //delete pid file
         file_exists($this->pidFile) && @unlink($this->pidFile);
 
@@ -635,10 +665,12 @@ class Server
     public function onWorkerStart(SwooleServer $serv, int $workerId)
     {
         try {
+            $processRole = $this->getWorkProcessRole($workerId);
+            $this->log("WorkerStart: $processRole process start workerId=$workerId");
+
             //worker start event
             Swozr::trigger(SwooleEvent::WORKER_START, $serv, compact('workerId'));
 
-            $processRole = $this->getWorkProcessRole($workerId);
             Swozr::setProcessName(sprintf("%s %s process", $this->pidName, $processRole));
 
             //worker|task start event
@@ -659,6 +691,8 @@ class Server
      */
     public function onWorkerStop(SwooleServer $serv, int $workerId)
     {
+        $this->log("WorkerStop: workerId=$workerId");
+
         //worker end event
         Swozr::trigger(SwooleEvent::WORKER_STOP, $serv, compact('workerId'));
 
@@ -699,6 +733,8 @@ class Server
     public function onReceive(SwooleServer $serv, int $fd, int $reactorId, string $data)
     {
         try {
+            $this->log("Receive: conn#{$fd} received client request, begin init context", $data, Swozr::LOG_LEVEL_DEBUG);
+
             Swozr::trigger(SwooleEvent::RECEIVE, $serv, compact('fd', 'reactorId', 'data'));
 
             [$class, $data, $taskType, $delay] = Packet::unpackClient($data);
@@ -776,19 +812,21 @@ class Server
     /**
      * @param string $msg
      * @param $data
-     * @param string $name
      * @param string $type
      */
-    public function log(string $msg, $data = '', string $name = '', string $type = Swozr::LOG_LEVEL_INFO)
+    public function log(string $msg, $data = '', string $type = Swozr::LOG_LEVEL_INFO)
     {
         if (!$this->debug) {
             return;
         }
 
+        //作色
+        if (isset(Console::LOG_LEVEL2TAG[$type])) {
+            $type = Output::wrap(strtoupper($type), Console::LOG_LEVEL2TAG[$type]);
+        }
+
         $dataString = is_array($data) ? PHP_EOL . json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : $data;
-        $msg = sprintf('[%s] [%s] [%s]：%s %s', date('Y-m-d H:i:s'), $name, $type, trim($msg), $dataString);
-        $msg = preg_replace('/<[\/]?[a-zA-Z=;]+>/', '', $msg);
-        fwrite(STDOUT, $msg . PHP_EOL);
+        Console::writef('%s [%s] %s %s', date('Y-m-d H:i:s'), $type, trim($msg), $dataString);
     }
 
     /**
@@ -832,8 +870,8 @@ class Server
         return [
             $this->pidName => [
                 'listen' => $this->host . ':' . $this->port,
-                'type' => $this->type,
-                'mode' => $this->mode,
+                'type' => $this->getTypeName(),
+                'mode' => $this->getModeName(),
                 'worker_num' => $this->setting['worker_num'],
                 'task_worker_num' => $this->setting['task_worker_num'],
             ]

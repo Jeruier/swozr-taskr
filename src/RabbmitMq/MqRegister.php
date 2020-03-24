@@ -37,6 +37,7 @@ class MqRegister extends SpecialTaskRegister
             throw new RegisterException("set config class is require");
         }
         RabbmitMq::checkConfig($config);
+
         self::checkClass($className);
 
         self::$rabbmitMqs[] = $config;

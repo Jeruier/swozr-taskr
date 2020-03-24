@@ -9,16 +9,12 @@
 namespace Swozr\Taskr\Server;
 
 
-use Swozr\Taskr\Server\Base\ExceptionManager;
-use Swozr\Taskr\Server\Base\ListenerRegister;
-use Swozr\Taskr\Server\Crontab\CrontabRegister;
-use Swozr\Taskr\Server\Exception\RuntimeException;
+use Swoole\Process;
 use Swozr\Taskr\Server\Processor\CrontabsProcessor;
 use Swozr\Taskr\Server\Processor\ExecptionManagerProcessor;
 use Swozr\Taskr\Server\Processor\ListenerProcessor;
 use Swozr\Taskr\Server\Processor\Processor;
 use Swozr\Taskr\Server\Processor\RabbmitMqsProcessor;
-use Swozr\Taskr\Server\RabbmitMq\MqRegister;
 use Swozr\Taskr\Server\Tools\OutputStyle\Console;
 
 class TaskrEngine
@@ -111,7 +107,7 @@ class TaskrEngine
      * 是否开启模式运行
      * @var bool
      */
-    public $debug = false;
+    public $debug = true;
 
     /**
      * rabbmit需要开启的进程数
@@ -146,7 +142,6 @@ class TaskrEngine
     {
         // Check runtime env
         Swozr::checkRuntime();
-
         // Init Taskr
         $this->init($config);
     }
@@ -164,6 +159,7 @@ class TaskrEngine
         }
 
         $this->server = new Server();
+        Swozr::init();
         Swozr::$server = $this->server;
     }
 
@@ -220,7 +216,17 @@ class TaskrEngine
      */
     public function stop()
     {
-        $this->server->stop();
+        self::checkIsRunning();
+
+        [$masterPid, $managerPid] = $this->server->getPidsFormFile();
+
+        if (!Process::kill($masterPid, 15)) {
+            return Console::writef("<success>Send stop signal to the %s(PID:%s) failed!</success>", $this->pidName, $masterPid);
+        }
+
+        file_exists($this->pidFile) && @unlink($this->pidFile);
+
+        return Console::writef("<success>The %d process stopped!</success>", $this->pidName);
     }
 
     /**
@@ -229,7 +235,12 @@ class TaskrEngine
      */
     public function reload(bool $onlyTaskWorker = false)
     {
-        $this->server->reload($onlyTaskWorker);
+        self::checkIsRunning();
+
+        [$masterPid, $managerPid] = $this->server->getPidsFormFile();
+        $signal = $onlyTaskWorker ? 12 : 10; //用户信号
+
+        return Process::kill($masterPid, $signal);
     }
 
     /**
@@ -249,14 +260,23 @@ class TaskrEngine
      */
     public function status()
     {
-        if ($pid = $this->server->isRunning()) {
-            //running
-            [$masterPid, $managerPid] = $this->server->getPidsFormFile();
-            return Console::writef("<success>Taskr Server is Running...</success> (Master PID: <mga>%d</mga>, Manager PID: <mga>%d</mga>)",
-                $masterPid,
-                $managerPid);
-        }
+        self::checkIsRunning();
 
-        Console::writeln("<danger>Taskr Server is not Running</danger>" . PHP_EOL);
+        //running
+        [$masterPid, $managerPid] = $this->server->getPidsFormFile();
+        return Console::writef("<success>Taskr Server is Running...</success> (Master PID: <mga>%d</mga>, Manager PID: <mga>%d</mga>)",
+            $masterPid,
+            $managerPid);
+
+    }
+
+    /**
+     * 是否运行中
+     */
+    protected function checkIsRunning(){
+        if (!$this->server->isRunning()) {
+            Console::writeln("<danger>Taskr Server is not Running</danger>" . PHP_EOL);
+            exit(0);
+        }
     }
 }

@@ -10,6 +10,7 @@ namespace Swozr\Taskr\Server\Processor;
 
 
 use Swozr\Taskr\Server\Base\ExceptionManager;
+use Swozr\Taskr\Server\Exception\Handler\DefaultExceptionHandler;
 use Swozr\Taskr\Server\Swozr;
 
 class ExecptionManagerProcessor extends Processor
