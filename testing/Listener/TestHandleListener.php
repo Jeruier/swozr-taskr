@@ -11,11 +11,12 @@ namespace SwozrTest\Taskr\Server\Listener;
 
 use Swozr\Taskr\Server\Contract\EventHandlerInterface;
 use Swozr\Taskr\Server\Contract\EventInterface;
+use Swozr\Taskr\Server\Tools\OutputStyle\Output;
 
 class TestHandleListener implements EventHandlerInterface
 {
     public function handle(EventInterface $event)
     {
-        echo __METHOD__ . "\n";
+        (new Output())->info($event->getName() . "handle");
     }
 }

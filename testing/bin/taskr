@@ -5,14 +5,19 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 (new \SwozrTest\Taskr\Server\Taskr([
-//    'crontabs' => [TaskHandleTest::class],
+    'setting' => [
+        'task_worker_num' => 2
+    ],
+    'crontabs' => [
+//            \SwozrTest\Taskr\Server\Tasks\TaskHandleTest::class
+    ],
     'listener' => [
-//        ServerEvent::BEFORE_START => TestHandleListener::class,
-//        ServerEvent::WORK_PROCESS_START => TestHandleListener::class
+        \Swozr\Taskr\Server\Event\ServerEvent::BEFORE_START => \SwozrTest\Taskr\Server\Listener\TestHandleListener::class,
+        \Swozr\Taskr\Server\Event\ServerEvent::WORK_PROCESS_START => \SwozrTest\Taskr\Server\Listener\TestHandleListener::class
     ],
     'rabbmitMqs' => [
         'class' => \SwozrTest\Taskr\Server\Tasks\TaskHandleTest::class,
-        'host'  => '192.168.99.100',
+        'host' => '192.168.99.100',
         'exchange_name' => 'a',
         'queue_name' => 'a',
         'routing_key' => 'c',
