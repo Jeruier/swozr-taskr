@@ -44,11 +44,9 @@ composer require jeruier/swozr-taskr
         'class' => \Swozr\Taskr\Server\TaskrEngine::class,
         'host' => '0.0.0.0',
         'port' => 9501,
+        'MQProcessMum' => 3,
         'setting' => [
             'task_worker_num' => 12,
-            ...
-        ],
-        'on' => [
             ...
         ],
         'listener' => [
@@ -58,6 +56,9 @@ composer require jeruier/swozr-taskr
             ...
         ],
         'crontabs' => [
+            ...
+        ],
+        'rabbmitMqs' => [
             ...
         ],
     ],
@@ -69,11 +70,9 @@ composer require jeruier/swozr-taskr
     $config = [
         'host' => '0.0.0.0',
         'port' => 9501,
+        'MQProcessMum' => 3,
         'setting' => [
              'task_worker_num' => 12,
-            ...
-        ],
-        'on' => [
             ...
         ],
         'listener' => [
@@ -85,6 +84,9 @@ composer require jeruier/swozr-taskr
         'crontabs' => [
             ...
         ],
+        'rabbmitMqs' => [
+            ...
+        ],
    ];
 ```
 >使用`(new \Swozr\Taskr\Server\TaskrEngine($config))->start()` 来启动服务
@@ -93,6 +95,7 @@ composer require jeruier/swozr-taskr
 >以下配置项皆为可选配置（非必须）
    * `host` 服务地址,默认值 `0.0.0.0`
    * `port` 端口,默认值 `9501`
+   * `MQProcessMum` 配置rabbmitMq任务运行处理进程数，默认值`1`（在配置了<a href="#rabbmitMqs">`rabbmitMqs`</a>时生效,且设置值需要小于setting的task_worker_num，配置的这几个任务经常将全权处理rabbmitMq任务,配置的task_worker_num减MQProcessMum的多余任务才会执行其他类型的任务）
    * `type` 指定Socket的类型，支持TCP、UDP、TCP6、UDP6、UnixSocket Stream/Dgram 等 [ Swoole Server 构造函数 第四个参数](https://wiki.swoole.com/wiki/page/14.html)
    * `pidName` 启动后进程的名称,默认值`swozr-taskr`
    * `pidFile` pid存放路径,默认值`/tmp/swozr.pid`
@@ -103,6 +106,7 @@ composer require jeruier/swozr-taskr
    * <a href="#listener">`listener`</a> 注册事件、设置对应事件的处理监听，事件触发组件调用，在任务里面使用
    * <a href="#exceptionHandler">`exceptionHandler`</a> 自定义异常处理类
    * <a href="#crontabs">`crontabs`</a> 需要处理的定时任务集
+   * <a href="#rabbmitMqs">`rabbmitMqs`</a> 配置rabbmitMq任务
    
    
 ### <a name="listener">listener配置</a>
@@ -198,13 +202,76 @@ Cron格式说明
     ]
 ```
 
+
+### <a name="rabbmitMqs">配置rabbmitMqs任务</a>
+>需要装php扩展:`amqp`
+
+配置项
+
+>带`*` 为必须配置项,可以配置多项（以多维数组的形式）
+
+- `calss` 执行rabbmitMq任务的类，必须继承
+[BaseTask](https://github.com/Jeruier/swozr-taskr/blob/master/src/Base/BaseTask.php)
+且实现[TaskConsume](https://github.com/Jeruier/swozr-taskr/tree/master/src/Contract/TaskConsume.php)接口
+- `*host` rabbmitMq地址
+- `port` rabbmitMq端口，默认值`5672`
+- `username` rabbmitMq用户名，默认值`guest`
+- `password` rabbmitMq密码，默认值`guest`
+- `*exchange_name` rabbmitMq交换机名称
+- `*queue_name` rabbmitMq队列名称
+- `routing_key` rabbmitMq路由名称
+
+配置一项rabbmit任务
+```php
+    'rabbmitMqs' => [
+        'class' => MqTaskHandleOne::class,
+        'host' => '192.168.99.100',
+        'port' => 5672
+        'username' => 'guest',
+        'password' => 'guest',
+        'exchange_name' => 'exchange1',
+        'queue_name' => 'queue1',
+        'routing_key' => 'routing1',
+    ],
+```
+配置多项rabbmit任务
+```php
+    'rabbmitMqs' => [
+        [        
+            'class' => MqTaskHandleOne::class,
+             'host' => '192.168.99.100',
+             'port' => 5672
+             'username' => 'guest',
+             'password' => 'guest',
+             'exchange_name' => 'exchange1',
+             'queue_name' => 'queue1',
+             'routing_key' => 'routing1',
+         ],
+         [        
+             'class' => MqTaskHandleTwo::class,
+              'host' => '192.168.99.100',
+              'port' => 5672
+              'username' => 'guest',
+              'password' => 'guest',
+              'exchange_name' => 'exchange1',
+              'queue_name' => 'queue2',
+              'routing_key' => 'routing2',
+          ],
+          ...
+    ],
+```
+
 ## 声明任务
->定义一个任务类（必须继承[BaseTask](https://github.com/Jeruier/swozr-taskr/blob/master/src/Base/BaseTask.php)）
+>定义一个任务类（必须继承[BaseTask](https://github.com/Jeruier/swozr-taskr/blob/master/src/Base/BaseTask.php)
+且实现[TaskConsume](https://github.com/Jeruier/swozr-taskr/tree/master/src/Contract/TaskConsume.php)接口,除定时任务和rabbmitMq任务的其他任务还要实现
+[TaskNotice](https://github.com/Jeruier/swozr-taskr/tree/master/src/Contract/TaskNotice.php)接口）
 
 ```php
 use Swozr\Taskr\Server\Base\BaseTask;
+use Swozr\Taskr\Server\Contract\TaskConsume;
+use Swozr\Taskr\Server\Contract\TaskNotice;
 
-class TaskTest extends BaseTask
+class TaskHandleTest extends BaseTask implements TaskNotice,TaskConsume
 {
     /**
      * 任务投递失败
@@ -246,7 +313,7 @@ class TaskTest extends BaseTask
     }
 }
 ```
->当配置为定时任务时需要继承静态属性<a href="#crontabs">$cron</a>
+>当配置为定时任务时需要继承静态属性进行配置<a href="#crontabs">$cron</a>
 
 ```php
     public static $cron = '0/3 * * * * *';
@@ -264,15 +331,20 @@ class TaskTest extends BaseTask
 - `getTaskName()` 获取任务名称
 
 
-需要实现的方法
+可实现的方法
 - `setTaskName()` 可设置自定义任务名称，（非必须）默认值`类ShortName`
+
+需要实现的[TaskNotice](https://github.com/Jeruier/swozr-taskr/tree/master/src/Contract/TaskNotice.php)接口
 - `pushFailure(array $data, int $delay, string $failMsg)`  服务投递过程投递失败时触发
     - `$data` 投递的数据
     - `$delay` 延迟时间
     - `$failMsg` 投递失败原因
 - `pushed()` 任务投递成功时触发
-- `consume()` 任务消费逻辑处理
 - `finished()` 任务消费完成触发
+
+需要实现的实现[TaskConsume](https://github.com/Jeruier/swozr-taskr/tree/master/src/Contract/TaskConsume.php)接口
+- `consume()` 任务消费逻辑处理
+
 
 ## 任务投递
 >`TaskTest`为声明的任务类，默认投递地址0.0.0.0，端口9501
