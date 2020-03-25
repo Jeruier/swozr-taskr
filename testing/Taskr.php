@@ -26,7 +26,7 @@ class Taskr
     public function run($argv)
     {
         if (1 == count($argv)) {
-            require self::tips();
+            return self::tips();
         }
         $action = $argv[1];
         if (!in_array($action, self::ACTIONS)){

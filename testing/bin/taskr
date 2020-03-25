@@ -5,11 +5,21 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 (new \SwozrTest\Taskr\Server\Taskr([
+    'host' => '0.0.0.0',
+    'port' => '9501',
+    'pidName' => 'swozr-taskr',
+    'MQProcessMum' => 1,
+    'debug' => true,
     'setting' => [
-        'task_worker_num' => 2
+        'worker_num' => 1,
+        'task_worker_num' => 2,
+        'daemonize' => false
+    ],
+    'exceptionHandler' => [
+        \Swozr\Taskr\Server\Exception\TaskException::class => \SwozrTest\Taskr\Server\ExceptionHandler\TaskExceptionHandler::class
     ],
     'crontabs' => [
-//            \SwozrTest\Taskr\Server\Tasks\TaskHandleTest::class
+        \SwozrTest\Taskr\Server\Tasks\TaskHandleTest::class
     ],
     'listener' => [
         \Swozr\Taskr\Server\Event\ServerEvent::BEFORE_START => \SwozrTest\Taskr\Server\Listener\TestHandleListener::class,

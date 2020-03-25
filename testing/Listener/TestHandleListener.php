@@ -17,6 +17,6 @@ class TestHandleListener implements EventHandlerInterface
 {
     public function handle(EventInterface $event)
     {
-        (new Output())->info($event->getName() . "handle");
+        (new Output())->primary($event->getName() . "handle");
     }
 }

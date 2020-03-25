@@ -1,0 +1,21 @@
+#!/usr/bin/env php
+<?php
+
+// Bootstrap
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+$taskrClientObj = \Swozr\Taskr\Server\Tools\TaskrClient::getInstance([
+    'host' => '0.0.0.0',
+    'port' => 9501,
+]);
+
+$argv = $argv ?? [];
+$nodeKey = array_search('-t', $argv);
+foreach ($argv as $key => $arg) {
+    if (0 == $key) continue; //脚本名
+    if ($nodeKey && $key < $nodeKey) {
+        \SwozrTest\Taskr\Server\Tasks\TaskHandleTest::publish([$arg], $taskrClientObj, $argv[$nodeKey + 1] ?? 0);  //异步任务
+    } else if (!$nodeKey){
+        \SwozrTest\Taskr\Server\Tasks\TaskHandleTest::publish([$arg], $taskrClientObj);  //异步任务
+    }
+}

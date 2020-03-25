@@ -15,7 +15,7 @@ use Swozr\Taskr\Server\Contract\TaskNotice;
 
 class TaskHandleTest extends BaseTask implements TaskNotice,TaskConsume
 {
-    public static $cron = '0/3 * * * * *';
+    public static $cron = '0 0/5 * * * *';
 
     public static function pushFailure(array $data, int $delay, string $failMsg)
     {
