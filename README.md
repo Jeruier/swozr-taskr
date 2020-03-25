@@ -402,6 +402,8 @@ Taskr Client 发布任务的客户端
     $taskrClientObj->setTimeout(1);
 ```
 
+
+
 ##testing
 
 * [testing](https://github.com/Jeruier/swozr-taskr/tree/master/testing)
@@ -622,6 +624,8 @@ class TaskrController extends Controller
 * reload taskr服务
 ```bash
     php yii taskr/reload
+    
+    //只reload task worker进程
     php yii taskr/reload -o
 ```
 
