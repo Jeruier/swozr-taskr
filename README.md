@@ -28,10 +28,11 @@ composer require jeruier/swozr-taskr
 
 ## Taskr Server Actions
 
+- `status()` Taskr服务运行状态
 - `reload()` 重新加载工作进程
-- `restart(bool $onlyTaskWorker = false)` 重新启动Taskr服务器 @param $onlyTaskWorker 是否只重启work进程
-- `start()` 启动Taskr服务器
-- `stop()` 停止当前正在运行的Taskr服务器
+- `restart(bool $onlyTaskWorker = false)` 重新启动Taskr服务 @param $onlyTaskWorker 是否只重启work进程
+- `start()` 启动Taskr服务
+- `stop()` 停止当前正在运行的Taskr服务
 
 
 ## 配置服务
@@ -100,7 +101,7 @@ composer require jeruier/swozr-taskr
    * `pidName` 启动后进程的名称,默认值`swozr-taskr`
    * `pidFile` pid存放路径,默认值`/tmp/swozr.pid`
    * `logFile` 指定swoole错误日志文件。在swoole运行期发生的异常信息会记录到这个文件中。默认会打印到屏幕,默认值`/tmp/swoole.log`
-   * `debug` 是否开启debug,默认值`false`
+   * `debug` 是否开启debug,默认值`true`
    * `on` 配置监听的事件
    * `setting` 参考 [Swoole Server 配置选项](https://wiki.swoole.com/wiki/page/274.html)
    * <a href="#listener">`listener`</a> 注册事件、设置对应事件的处理监听，事件触发组件调用，在任务里面使用
