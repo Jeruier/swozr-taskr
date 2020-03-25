@@ -22,8 +22,8 @@ require_once __DIR__ . '/../../vendor/autoload.php';
         \SwozrTest\Taskr\Server\Tasks\TaskHandleTest::class
     ],
     'listener' => [
-        \Swozr\Taskr\Server\Event\ServerEvent::BEFORE_START => \SwozrTest\Taskr\Server\Listener\TestHandleListener::class,
-        \Swozr\Taskr\Server\Event\ServerEvent::WORK_PROCESS_START => \SwozrTest\Taskr\Server\Listener\TestHandleListener::class
+        \Swozr\Taskr\Server\Event\ServerEvent::TASK_PUSHED => \SwozrTest\Taskr\Server\Listener\TestHandleListener::class,
+        \Swozr\Taskr\Server\Event\ServerEvent::TASK_CONSUME => \SwozrTest\Taskr\Server\Listener\TestHandleListener::class
     ],
     'rabbmitMqs' => [
         'class' => \SwozrTest\Taskr\Server\Tasks\TaskHandleTest::class,
