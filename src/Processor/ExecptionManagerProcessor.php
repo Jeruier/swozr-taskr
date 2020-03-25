@@ -23,7 +23,7 @@ class ExecptionManagerProcessor extends Processor
             foreach ($this->taskrEngine->exceptionHandler as $exceptionClass => $handlerClass) {
                 $execptionManager->addHandler($exceptionClass, $handlerClass);
             }
-            Swozr::server()->setExecptionManager($execptionManager);
+            Swozr::$server->setExecptionManager($execptionManager);
         }
     }
 }

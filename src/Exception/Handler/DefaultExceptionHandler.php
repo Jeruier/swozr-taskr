@@ -18,7 +18,7 @@ class DefaultExceptionHandler implements ExceptionHandlerInterface
     {
         $msg = "code: {$e->getCode()}, file: {$e->getFile()}, line: {$e->getLine()}, msg: {$e->getMessage()} ";
         $name = get_class($e);
-        $loglevel = $name == \Exception::class ? Swozr::LOG_LEVEL_ERROR : Swozr::LOG_LEVEL_WARNING;
-        Swozr::$server->log($name . ':' . $msg, '', $loglevel);
+//        $loglevel = $name == \Exception::class ? Swozr::LOG_LEVEL_ERROR : Swozr::LOG_LEVEL_WARNING;
+        Swozr::$server->log($name . ':' . $msg, '', Swozr::LOG_LEVEL_ERROR);
     }
 }

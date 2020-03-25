@@ -24,7 +24,7 @@ class Swozr
     /**
      * waring级别日志
      */
-    const LOG_LEVEL_WARNING = 'waring';
+    const LOG_LEVEL_WARNING = 'warning';
 
     /**
      * info级别日志
@@ -133,7 +133,7 @@ class Swozr
     {
         $msg = self::makeLogPrefix($event->getParams());
         $msg .= $event->getMessage();
-        Swozr::server()->log($event->getName() . ':' . $msg, $event->getData());
+        Swozr::server()->log(ucfirst($event->getName()) . ':' . $msg, $event->getData());
     }
 
     /**

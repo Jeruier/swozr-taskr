@@ -22,15 +22,18 @@ class Crontab implements SpecialTask
      */
     public static function run()
     {
-        Timer::tick(1000, function (){
+        Timer::tick(1000, function () {
             // All task
             $tasks = CrontabRegister::getCronTasks();
 
             // Push task
             foreach ($tasks as $className) {
-                try{
-                    BaseTask::push($className, [], BaseTask::TYPE_CRONTAB);
-                }catch (\Exception $e){
+                try {
+                    BaseTask::push($className, [], BaseTask::TYPE_CRONTAB, 0, -1, function (\Swoole\Server $server, $task_id, $data) {
+                        //crontab任务设置回调函数，不执行onFinish回调
+                        return;
+                    });
+                } catch (\Exception $e) {
                     Swozr::server()->execptionManager->handler($e);
                 }
             }

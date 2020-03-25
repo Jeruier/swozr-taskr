@@ -587,14 +587,13 @@ class Server
         }
 
         if (!Process::kill($this->masterPid, 15)) {
-            echo "Send stop signal to the {$this->pidName}(PID:{$this->masterPid}) failed!" . PHP_EOL;
-            return false;
+            return Console::writef("<success>Send stop signal to the %s(PID:%s) failed!</success>", $this->pidName, $this->masterPid);
+
         }
 
-        echo "The {$this->pidName} process stopped." . PHP_EOL;
         file_exists($this->pidFile) && @unlink($this->pidFile);
 
-        return true;
+        return Console::writef("<success>The %d process stopped!</success>", $this->pidName);
     }
 
     /**
@@ -711,7 +710,7 @@ class Server
      */
     public function onWorkerError(SwooleServer $serv, int $workerId, int $workerPid, int $exitCode, int $signal)
     {
-        $this->log("WorkerError: exitCode=$exitCode, Error worker: workerId=$workerId workerPid=$workerPid");
+        $this->log("WorkerError: exitCode=$exitCode, Error worker: workerId=$workerId workerPid=$workerPid signal=$signal");
 
         //work error event
         $event = new Event(SwooleEvent::WORKER_ERROR, [
@@ -743,13 +742,30 @@ class Server
             if (BaseTask::TYPE_DELAY == $taskType) {
                 //延迟任务
                 \Swoole\Timer::after($delay, function () use ($class, $data, $taskType, $delay) {
-                    $taskId = BaseTask::push($class, $data, $taskType, $delay);
+                    $taskId = $this->puskTask($class, $data, $taskType, $delay);
                 });
             } else {
-                $taskId = BaseTask::push($class, $data, $taskType, $delay);
+                $taskId = $this->puskTask($class, $data, $taskType, $delay);
             }
         } catch (\Exception $e) {
             $this->execptionManager->handler($e); //execption handler
+        }
+    }
+
+    /**
+     * 推送任务
+     * @param $class
+     * @param $data
+     * @param $taskType
+     * @param $delay
+     * @return bool|mixed
+     */
+    private function puskTask($class, $data, $taskType, $delay){
+        try{
+            return BaseTask::push($class, $data, $taskType, $delay);
+        }catch (\Exception $e){
+            $this->execptionManager->handler($e); //execption handler
+            return false;
         }
     }
 

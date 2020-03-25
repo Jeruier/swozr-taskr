@@ -179,7 +179,7 @@ class BaseTask
         $delay = 0;
         $taskrClientObj = null;
         foreach ($varParams as $param) {
-            is_integer($param) && $delay = $param;
+            is_numeric($param) && $delay = $param;
             is_object($param) && $taskrClientObj = $param;
         }
         $taskType = $delay > 0 ? self::TYPE_DELAY : self::TYPE_ASYNC;
