@@ -499,6 +499,9 @@ class Server
         //监听者注册
         ListenerRegister::register(EventManager::getInstance());
 
+        //show logo banner
+        Swozr::showBanner();
+
         //服务信息面板
         Output::Panel($this->buildMainServerInfo(), 'Tasker Server Information', [
             'titleStyle' => 'cyan',

@@ -429,4 +429,19 @@ class Console
     {
         self::$buffer = '';
     }
+
+    /**
+     * @param string $message
+     * @param string $style
+     * @param bool   $nl
+     * @param array  $opts
+     *
+     * @return int
+     */
+    public static function colored(string $message, string $style = 'info', bool $nl = true, array $opts = []): int
+    {
+        $quit = isset($opts['quit']) ? (bool)$opts['quit'] : false;
+
+        return self::write(Output::wrap($message, $style), $nl, $quit, $opts);
+    }
 }

@@ -13,6 +13,9 @@ use Swozr\Taskr\Server\Base\Event;
 use Swozr\Taskr\Server\Base\EventManager;
 use Swozr\Taskr\Server\Contract\EventInterface;
 use Swozr\Taskr\Server\Exception\RuntimeException;
+use Swozr\Taskr\Server\Helper\SystemHelper;
+use Swozr\Taskr\Server\Tools\OutputStyle\Console;
+use Swozr\Taskr\Server\Tools\OutputStyle\Output;
 
 class Swozr
 {
@@ -20,6 +23,28 @@ class Swozr
      * @var Server
      */
     public static $server;
+
+    /**
+     * taskr server start banner logo
+     */
+    const BANNER_LOGO_SMALL = "
+ ______           __
+/_  __/___ ______/ /_______
+  / / / __ `/ ___/ //_/ ___/
+ / / / /_/ (__  ) ,< / /
+/_/  \__,_/____/_/|_/_/  
+";
+
+    /**
+     * taskr server start banner logo
+     */
+    const BANNER_LOGO_FULL = "
+   _____                             ______           __
+  / ___/      ______  ____  _____   /_  __/___ ______/ /_______
+  \__ \ | /| / / __ \/_  / / ___/    / / / __ `/ ___/ //_/ ___/
+ ___/ / |/ |/ / /_/ / / /_/ /       / / / /_/ (__  ) ,< / /
+/____/|__/|__/\____/ /___/_/       /_/  \__,_/____/_/|_/_/                     
+";
 
     /**
      * waring级别日志
@@ -168,5 +193,17 @@ class Swozr
                 throw new RuntimeException("The extension of '{$ext}' must be closed, otherwise swoole will be affected!");
             }
         }
+    }
+
+    /**
+     * Show sowzr taskr logo banner
+     */
+    public static function showBanner()
+    {
+        [$width,] = SystemHelper::getScreenSize();
+        $logoText = $width > 90 ? self::BANNER_LOGO_FULL : self::BANNER_LOGO_SMALL;
+        $logoText = ltrim($logoText, "\n");
+
+        Console::colored(Output::applyIndent($logoText), 'cyan');
     }
 }

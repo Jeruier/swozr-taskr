@@ -513,4 +513,27 @@ class Output
 
         return Console::write(sprintf($format, ...$args));
     }
+
+    /**
+     * @param string $string
+     * @param int    $indent
+     * @param string $indentChar
+     * @return string
+     */
+    public static function applyIndent(string $string, int $indent = 2, string $indentChar = ' '): string
+    {
+        if (!$string || $indent <= 0) {
+            return $string;
+        }
+
+        $new  = '';
+        $list = explode("\n", $string);
+
+        $indentStr = str_repeat($indentChar ?: ' ', $indent);
+        foreach ($list as $value) {
+            $new .= $indentStr . $value . "\n";
+        }
+
+        return $new;
+    }
 }
