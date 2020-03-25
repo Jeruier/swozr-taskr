@@ -119,10 +119,10 @@ composer require jeruier/swozr-taskr
 ### <a name="listener">listener配置</a>
  >listener为键为事件名称值为事件处理或事件处理数组
  ###### 事件名称
-- Swoole事件：Swoole 文档中的每个事件，在 Swoft 里面均可监听，并且可以存在多个监听器。（完整事件列表请参阅 [SwooleEvent.php](https://github.com/Jeruier/swozr-taskr/blob/master/src/Event/SwooleEvent.php) 文件）
-- Swoft事件：基于 Swoole 的回调处理扩展了一些可用 Server 事件，提供更加精细的操作空间（完整事件列表请参阅 [ServerEvent.php](https://github.com/Jeruier/swozr-taskr/blob/master/src/Event/ServerEvent.php) 文件）         
+- Swoole事件：Swoole 文档中的每个事件，在 Swoft 里面均可监听，并且可以存在多个监听器。（完整事件列表请参阅 [SwooleEvent.php](src/Event/SwooleEvent.php) 文件）
+- Swoft事件：基于 Swoole 的回调处理扩展了一些可用 Server 事件，提供更加精细的操作空间（完整事件列表请参阅 [ServerEvent.php](src/Event/ServerEvent.php) 文件）         
 ###### 事件处理定义
-> [Event](https://github.com/Jeruier/swozr-taskr/blob/master/src/Base/Event.php) $event 事件
+> [Event](src/Base/Event.php) $event 事件
 - 闭包方式
  ```php
     'listener' => [
@@ -156,7 +156,7 @@ composer require jeruier/swozr-taskr
        ], 
 ```
 - 事件处理处理类
-> 该类需要继承 [EventHandlerInterface](https://github.com/Jeruier/swozr-taskr/blob/master/src/Contract/EventHandlerInterface.php)
+> 该类需要继承 [EventHandlerInterface](src/Contract/EventHandlerInterface.php)
 ```php
        'listener' => [
            ServerEvent::BEFORE_ADDED_EVENT => 'EventHandlerController',
@@ -169,7 +169,7 @@ composer require jeruier/swozr-taskr
  ####指定异常
  >[可定义的异常](https://github.com/Jeruier/swozr-taskr/tree/master/src/Exception)
  ####异常处理类
- > 需要实现[ExceptionHandlerInterface](https://github.com/Jeruier/swozr-taskr/blob/master/src/Contract/ExceptionHandlerInterface.php)接口
+ > 需要实现[ExceptionHandlerInterface](src/Contract/ExceptionHandlerInterface.php)接口
 ####配置自定义异常处理类
  ```php
     'exceptionHandler' => [
@@ -180,7 +180,7 @@ composer require jeruier/swozr-taskr
 ```
 
 ### <a name="crontabs">crontabs配置</a>
->项目有定时业务需求的时候定义crontabs数组，crontabs数组为键为任务格式值为继承[BaseTask](https://github.com/Jeruier/swozr-taskr/blob/master/src/Base/BaseTask.php)的类,必须定义静态变量$cron( Crontab 表达式，支持到秒)
+>项目有定时业务需求的时候定义crontabs数组，crontabs数组为键为任务格式值为继承[BaseTask](src/Base/BaseTask.php)的类,必须定义静态变量$cron( Crontab 表达式，支持到秒)
 Cron格式说明
 ```php
 *    *    *    *    *    *
@@ -218,7 +218,7 @@ Cron格式说明
 >带`*` 为必须配置项,可以配置多项（以多维数组的形式）
 
 - `calss` 执行rabbmitMq任务的类，必须继承
-[BaseTask](https://github.com/Jeruier/swozr-taskr/blob/master/src/Base/BaseTask.php)
+[BaseTask](src/Base/BaseTask.php)
 且实现[TaskConsume](https://github.com/Jeruier/swozr-taskr/tree/master/src/Contract/TaskConsume.php)接口
 - `*host` rabbmitMq地址
 - `port` rabbmitMq端口，默认值`5672`
@@ -269,7 +269,7 @@ Cron格式说明
 ```
 
 ## 声明任务
->定义一个任务类（必须继承[BaseTask](https://github.com/Jeruier/swozr-taskr/blob/master/src/Base/BaseTask.php)
+>定义一个任务类（必须继承[BaseTask](src/Base/BaseTask.php)
 且实现[TaskConsume](https://github.com/Jeruier/swozr-taskr/tree/master/src/Contract/TaskConsume.php)接口,除定时任务和rabbmitMq任务的其他任务还要实现
 [TaskNotice](https://github.com/Jeruier/swozr-taskr/tree/master/src/Contract/TaskNotice.php)接口）
 
@@ -379,7 +379,7 @@ TaskTest::publish(array $data, ...$varParams)
 - `$data` 需要投递的数据
 - `$varParams` 为可选参数
     - `int $delay` 如需投递延迟任务时传入(单位：ms)
-    - [TaskrClient](https://github.com/Jeruier/swozr-taskr/blob/master/src/Tools/TaskrClient.php) `$taskrClientObj` 
+    - [TaskrClient](src/Tools/TaskrClient.php) `$taskrClientObj` 
     如需自定义投递地址及端口需定义发送客户端（地址端口与Taskr配置的服务地址端口需相同）
 
 Taskr Client 发布任务的客户端

@@ -1,8 +1,8 @@
-#testing
+# testing
 
-##testing taskr 服务 
+## testing taskr 服务 
 
-[![Swozr-taskr](https://github.com/Jeruier/swozr-taskr/tree/develop/testing/public/images/start-taskr-server-example.png)]
+![image](public/images/start-taskr-server-example.png)
 
 >实际嵌入php框架时在console控制器使用指定命令路由调用TaskrEngine的相应方法
 
@@ -31,7 +31,7 @@ reload服务
     php bin/taskr restart
 ```
 
-##testing taskr 客户端
+## testing taskr 客户端
 >实际直接参考发布任务部分
 * 多个arg即发布多个任务 当
 * -t a 则发布延迟a毫秒的延迟任务 
