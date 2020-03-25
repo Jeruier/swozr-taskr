@@ -23,6 +23,7 @@ php任务服务组件
 - 异步任务
 - 延迟任务
 - 秒级定时任务
+- RabbmitMQ任务
 
 ## Install
 
