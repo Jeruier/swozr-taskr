@@ -167,11 +167,11 @@ composer require jeruier/swozr-taskr
 
 ### <a name="exceptionHandler">exceptionHandler配置</a>
  >exceptionHandler配置为键为指定异常值为异常处理类的数组
- ####指定异常
+ #### 指定异常
  >[可定义的异常](https://github.com/Jeruier/swozr-taskr/tree/master/src/Exception)
- ####异常处理类
+ #### 异常处理类
  > 需要实现[ExceptionHandlerInterface](src/Contract/ExceptionHandlerInterface.php)接口
-####配置自定义异常处理类
+#### 配置自定义异常处理类
  ```php
     'exceptionHandler' => [
         'SwozrException' => 'SwozrExceptionHandler',
