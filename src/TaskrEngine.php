@@ -195,7 +195,7 @@ class TaskrEngine
         }
 
         //载入
-        foreach ($this->processors() as $processor){
+        foreach ($this->processors() as $processor) {
             $processor->handle();
         }
     }
@@ -207,8 +207,14 @@ class TaskrEngine
      */
     public function start()
     {
-        $this->beforeRun();
-        $this->server->start();
+        try {
+            $this->beforeRun();
+            $this->server->start();
+        } catch (\Exception $e) {
+            //启动失败
+            Console::writeln("<danger>Taskr Server start fail! " . PHP_EOL . "{$e->getMessage()}</danger>" . PHP_EOL);
+            exit(0);
+        }
     }
 
     /**
@@ -273,7 +279,8 @@ class TaskrEngine
     /**
      * 是否运行中
      */
-    protected function checkIsRunning(){
+    protected function checkIsRunning()
+    {
         if (!$this->server->isRunning()) {
             Console::writeln("<danger>Taskr Server is not Running</danger>" . PHP_EOL);
             exit(0);
